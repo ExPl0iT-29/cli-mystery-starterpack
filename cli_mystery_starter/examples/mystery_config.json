@@ -1,0 +1,19 @@
+{
+  "project_name": "terminal-archive-case",
+  "display_title": "The Terminal Archive Case",
+  "theme": "museum forgery mystery",
+  "player_role": "investigator",
+  "answer_type": "culprit_name",
+  "clue_marker": "CLUE",
+  "folders": [
+    "game/interviews",
+    "game/locations",
+    "game/memberships",
+    "game/logs",
+    "game/registry",
+    "hints",
+    "docs",
+    "design",
+    "tools"
+  ]
+}
