@@ -117,3 +117,27 @@
 - Decisions: position the starter pack as an authoring tool, separate package docs from authoring guidance, and preserve BMAD evidence in this ledger
 - Handoff target: `complete`
 - Completion state: complete
+
+## 2026-04-15 - Ruflo MCP Debug
+
+### Checkpoint 11
+
+- Role: `dev`
+- Phase: `analysis`
+- Workflow: `investigate / mcp startup failure`
+- Artifact created or updated: root-cause notes for Ruflo MCP startup path
+- Blockers: Ruflo MCP tools were not registered in-session because the configured launcher failed before server startup
+- Decisions: confirm Codex was configured with `npx -y ruflo@latest`; isolate `latest` as `3.5.80`; verify `3.5.80` fails under local npm `11.6.2` with `Invalid Version`; verify `3.5.51` launches successfully
+- Handoff target: `dev`
+- Completion state: complete
+
+### Checkpoint 12
+
+- Role: `dev`
+- Phase: `validation`
+- Workflow: `investigate / mcp startup failure`
+- Artifact created or updated: Codex MCP config fix and BMAD ledger update
+- Blockers: current session will still lack `mcp__ruflo__*` tools until Codex reloads MCP servers
+- Decisions: pin Ruflo MCP server registration to `ruflo@3.5.51` as the last locally verified working version instead of broken `latest`
+- Handoff target: `complete`
+- Completion state: complete
