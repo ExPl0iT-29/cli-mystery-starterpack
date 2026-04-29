@@ -34,9 +34,24 @@ def load_title(root: Path) -> str:
 
 
 def resolve_project_path(current: Path, root: Path, raw: str) -> Path:
-    candidate = (root / raw.lstrip("/")).resolve() if raw.startswith("/") else (current / raw).resolve()
+    base = root if raw.startswith("/") else current
+    raw_target = base / raw.lstrip("/")
+    walker = raw_target
+    seen = 0
+    while seen < 64:
+        if walker.is_symlink():
+            raise ValueError("Symlinks are not allowed inside the case file.")
+        if walker == walker.parent:
+            break
+        try:
+            walker.relative_to(root)
+        except ValueError:
+            break
+        walker = walker.parent
+        seen += 1
+    candidate = raw_target.resolve()
     try:
-        candidate.relative_to(root)
+        candidate.relative_to(root.resolve())
     except ValueError as exc:
         raise ValueError("Path escapes the case file.") from exc
     return candidate
@@ -48,7 +63,7 @@ def format_project_path(path: Path, root: Path) -> str:
 
 def check_answer(project_root: Path, guess: str) -> bool:
     expected = (project_root / "encoded").read_text(encoding="utf-8").strip()
-    digest = hashlib.md5(guess.strip().encode("utf-8")).hexdigest()
+    digest = hashlib.md5(guess.strip().encode("utf-8"), usedforsecurity=False).hexdigest()
     return digest == expected
 
 
@@ -147,7 +162,11 @@ class InvestigationShell(cmd.Cmd):
         if not parts:
             print("Usage: head <path> [count]")
             return
-        count = int(parts[1]) if len(parts) > 1 else 10
+        try:
+            count = int(parts[1]) if len(parts) > 1 else 10
+        except ValueError:
+            print("Usage: head <path> [count]  (count must be an integer)")
+            return
         try:
             text = self._read_file(resolve_project_path(self.current, self.project_root, parts[0]))
         except ValueError as exc:
@@ -160,7 +179,11 @@ class InvestigationShell(cmd.Cmd):
         if not parts:
             print("Usage: tail <path> [count]")
             return
-        count = int(parts[1]) if len(parts) > 1 else 10
+        try:
+            count = int(parts[1]) if len(parts) > 1 else 10
+        except ValueError:
+            print("Usage: tail <path> [count]  (count must be an integer)")
+            return
         try:
             text = self._read_file(resolve_project_path(self.current, self.project_root, parts[0]))
         except ValueError as exc:
@@ -196,14 +219,20 @@ class InvestigationShell(cmd.Cmd):
         key = arg.strip().lower()
         path_parts = SURFACES.get(key)
         if path_parts is None:
-            print("Unknown surface.")
+            print("Unknown surface. Try: " + ", ".join(sorted(SURFACES)))
             return
         target = self.project_root.joinpath(*path_parts)
+        if not target.exists():
+            print(f"Surface `{key}` is missing on disk: {format_project_path(target, self.project_root)}")
+            return
         if target.is_dir():
             self._set_current(target)
             self.do_ls("")
-        else:
+            return
+        try:
             print(self._read_file(target))
+        except ValueError as exc:
+            print(exc)
 
     def do_note(self, arg: str) -> None:
         text = arg.strip()
@@ -281,6 +310,10 @@ class InvestigationShell(cmd.Cmd):
         return True
 
     def do_exit(self, arg: str) -> bool:
+        return self.do_quit(arg)
+
+    def do_EOF(self, arg: str) -> bool:
+        print()
         return self.do_quit(arg)
 
     def default(self, line: str) -> None:

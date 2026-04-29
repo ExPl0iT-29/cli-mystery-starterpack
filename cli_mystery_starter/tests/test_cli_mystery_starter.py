@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import io
+import os
 import sys
 import tempfile
 import unittest
@@ -16,6 +18,11 @@ from cli_mystery_starter.cli import main
 from cli_mystery_starter.runtime import InvestigationShell
 from cli_mystery_starter.scaffold import DEFAULT_CONFIG, create_project
 from cli_mystery_starter.validation import validate_project
+
+
+def _set_real_answer(target: Path, answer: str = "Maria Ortega") -> None:
+    digest = hashlib.md5(answer.encode("utf-8"), usedforsecurity=False).hexdigest()
+    (target / "encoded").write_text(digest + "\n", encoding="utf-8")
 
 
 class StarterPackTests(unittest.TestCase):
@@ -42,8 +49,75 @@ class StarterPackTests(unittest.TestCase):
 
     def test_validate_passes_on_fresh_scaffold(self) -> None:
         target = self.scaffold_case()
+        _set_real_answer(target)
         errors = validate_project(target)
         self.assertEqual(errors, [])
+
+    def test_validate_flags_default_placeholder_answer(self) -> None:
+        target = self.scaffold_case()
+        errors = validate_project(target)
+        self.assertTrue(
+            any("placeholder" in err.lower() for err in errors),
+            f"expected placeholder warning, got: {errors}",
+        )
+
+    def test_scaffold_rejects_unsafe_folder_paths(self) -> None:
+        target = self.root / "evil-case"
+        bad_config = dict(DEFAULT_CONFIG)
+        bad_config["folders"] = ["../escape", "ok/folder"]
+        with self.assertRaises(ValueError):
+            create_project(target, bad_config)
+
+    def test_runtime_rejects_path_escape(self) -> None:
+        target = self.scaffold_case()
+        shell = InvestigationShell(target)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            shell.onecmd("cat ../../etc/passwd")
+        self.assertIn("escapes the case file", buffer.getvalue())
+
+    def test_runtime_rejects_symlink(self) -> None:
+        if not hasattr(os, "symlink"):
+            self.skipTest("symlink unavailable")
+        target = self.scaffold_case()
+        link_path = target / "game" / "shortcut"
+        try:
+            os.symlink(target / "game" / "incident", link_path)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlink creation not permitted")
+        shell = InvestigationShell(target)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            shell.onecmd("cat shortcut")
+        self.assertIn("Symlinks are not allowed", buffer.getvalue())
+
+    def test_head_handles_non_integer_count(self) -> None:
+        target = self.scaffold_case()
+        shell = InvestigationShell(target)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            shell.onecmd("head incident abc")
+        self.assertIn("Usage: head", buffer.getvalue())
+
+    def test_open_handles_missing_surface_file(self) -> None:
+        target = self.scaffold_case()
+        (target / "game" / "incident").unlink()
+        shell = InvestigationShell(target)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            shell.onecmd("open incident")
+        out = buffer.getvalue()
+        self.assertIn("incident", out)
+        self.assertNotIn("Traceback", out)
+
+    def test_eof_quits_cleanly(self) -> None:
+        target = self.scaffold_case()
+        shell = InvestigationShell(target)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            result = shell.onecmd("EOF")
+        self.assertTrue(result)
+        self.assertIn("Case file closed", buffer.getvalue())
 
     def test_validate_fails_for_missing_hint_and_bad_hash(self) -> None:
         target = self.scaffold_case()

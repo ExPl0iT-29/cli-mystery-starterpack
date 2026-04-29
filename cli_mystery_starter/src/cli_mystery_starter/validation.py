@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
+
+
+PLACEHOLDER_ANSWER = "John Doe"
+PLACEHOLDER_ANSWER_HASH = hashlib.md5(
+    PLACEHOLDER_ANSWER.encode("utf-8"), usedforsecurity=False
+).hexdigest()
+DEFAULT_PROJECT_NAME = "my-cli-mystery"
 
 
 REQUIRED_PATHS = [
@@ -94,6 +102,13 @@ def validate_project(root: Path) -> list[str]:
         encoded = encoded_path.read_text(encoding="utf-8").strip()
         if not re.fullmatch(r"[0-9a-f]{32}", encoded):
             errors.append("`encoded` must contain a lowercase 32-character MD5 hex digest")
+        elif encoded == PLACEHOLDER_ANSWER_HASH:
+            project_name = (config or {}).get("project_name") if config is not None else None
+            if not project_name or project_name == DEFAULT_PROJECT_NAME:
+                errors.append(
+                    "`encoded` still equals the placeholder `John Doe` answer; "
+                    "set a real answer before shipping (see `solution` for the one-liner)"
+                )
 
     play_wrapper = root / "play.py"
     if play_wrapper.exists():

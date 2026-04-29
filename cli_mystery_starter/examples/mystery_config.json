@@ -3,7 +3,6 @@
   "display_title": "The Terminal Archive Case",
   "theme": "museum forgery mystery",
   "player_role": "investigator",
-  "answer_type": "culprit_name",
   "clue_marker": "CLUE",
   "folders": [
     "game/interviews",

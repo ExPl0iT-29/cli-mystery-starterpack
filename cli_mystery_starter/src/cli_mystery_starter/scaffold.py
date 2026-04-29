@@ -11,7 +11,6 @@ DEFAULT_CONFIG = {
     "display_title": "My CLI Mystery",
     "theme": "original mystery",
     "player_role": "investigator",
-    "answer_type": "culprit_name",
     "clue_marker": "CLUE",
     "folders": [
         "game/interviews",
@@ -48,11 +47,19 @@ def write_text(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
+def _safe_relative_folder(folder: str) -> Path:
+    candidate = Path(folder)
+    if candidate.is_absolute() or ".." in candidate.parts:
+        raise ValueError(f"Unsafe folder path in config: {folder!r}")
+    return candidate
+
+
 def create_project(target: Path, config: dict) -> list[Path]:
     ensure_clean_target(target)
 
     for folder in config["folders"]:
-        (target / folder).mkdir(parents=True, exist_ok=True)
+        rel = _safe_relative_folder(folder)
+        (target / rel).mkdir(parents=True, exist_ok=True)
 
     project_name = templates.slugify(config["project_name"])
     display_title = config["display_title"]
