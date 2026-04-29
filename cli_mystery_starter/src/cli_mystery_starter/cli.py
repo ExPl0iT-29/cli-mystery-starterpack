@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .answer import check_answer_command
+from .runtime import play_project
 from .scaffold import create_project, load_config
 from .validation import validate_project
 
@@ -23,6 +25,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate_parser = subparsers.add_parser("validate", help="Validate a mystery project")
     validate_parser.add_argument("target", help="Target project directory")
+
+    play_parser = subparsers.add_parser("play", help="Run a mystery project in the investigation shell")
+    play_parser.add_argument("target", help="Target project directory")
+
+    answer_parser = subparsers.add_parser("check-answer", help="Check a suspect name against a mystery project")
+    answer_parser.add_argument("target", help="Target project directory")
+    answer_parser.add_argument("guess", help="Suspect name to verify")
     return parser
 
 
@@ -48,6 +57,12 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print("Validation passed.")
         return 0
+
+    if args.command == "play":
+        return play_project(Path(args.target).resolve())
+
+    if args.command == "check-answer":
+        return check_answer_command(Path(args.target).resolve(), args.guess)
 
     parser.error("Unknown command")
     return 2

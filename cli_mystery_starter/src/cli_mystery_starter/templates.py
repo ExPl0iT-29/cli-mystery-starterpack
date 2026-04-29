@@ -18,10 +18,10 @@ def root_readme(project_name: str, display_title: str) -> str:
 
 ## Start Here
 
-1. Open `instructions`
-2. Enter the `game/` folder
-3. Inspect `incident`
-4. Use shell commands to follow the clue graph
+1. Run `python play.py`
+2. Use `cat incident` or `open incident`
+3. Follow the evidence through `people`, `locations`, `interviews`, `logs`, and `registry`
+4. Finish with `accuse <name>`
 
 ## Authoring
 
@@ -31,6 +31,26 @@ Edit these first:
 - `design/clue_graph.md`
 - `docs/data_schemas.md`
 - `game/incident`
+
+## Development Commands
+
+Interactive playtest:
+
+```bash
+python play.py
+```
+
+Project validation:
+
+```bash
+python -m cli_mystery_starter validate .
+```
+
+Answer verification:
+
+```bash
+python tools/check_answer.py "John Doe"
+```
 
 Run validation with:
 
@@ -43,13 +63,13 @@ python -m cli_mystery_starter validate .
 def instructions(display_title: str) -> str:
     return f"""Welcome to {display_title}.
 
-Start by entering the `game` directory and reading the `incident` file.
+Start by running `python play.py` and reading the `incident` file.
 
 Important notes:
 
 - the real clues are marked with `CLUE`
 - if you get stuck, read the files in `hints/`
-- to check your answer, read `solution`
+- to check your answer, use `accuse <name>` or `python tools/check_answer.py "<name>"`
 - do not start by opening every file manually; search and cross-reference them
 """
 
@@ -57,6 +77,14 @@ Important notes:
 def solution() -> str:
     return """Checking Your Answer
 ====================
+
+In the interactive runtime:
+
+    accuse "John Doe"
+
+Through the helper script:
+
+    python tools/check_answer.py "John Doe"
 
 Replace `John Doe` with your suspected answer:
 
@@ -171,4 +199,49 @@ def data_schemas() -> str:
 ## interviews / logs / memberships / registry
 
 - keep each family internally consistent
+"""
+
+
+def family_stub(title: str, purpose: str) -> str:
+    return f"""# {title}
+
+Purpose:
+- {purpose}
+
+Author note:
+- replace this stub with real case content before shipping
+"""
+
+
+def play_wrapper() -> str:
+    return """from __future__ import annotations
+
+from pathlib import Path
+
+from cli_mystery_starter.runtime import play_project
+
+
+if __name__ == "__main__":
+    raise SystemExit(play_project(Path(__file__).resolve().parent))
+"""
+
+
+def answer_wrapper() -> str:
+    return """from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+from cli_mystery_starter.answer import check_answer_command
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print('Usage: python tools/check_answer.py <suspect name>')
+        return 1
+    return check_answer_command(Path(__file__).resolve().parents[1], " ".join(sys.argv[1:]))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 """

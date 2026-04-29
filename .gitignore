@@ -1,1 +1,4 @@
 *.tgz
+.omx/
+__pycache__/
+*.pyc
