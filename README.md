@@ -5,7 +5,7 @@ CLI mystery games.
 
 It contains three main parts:
 
-- `cli_mystery_starter/`: the Python package that scaffolds and validates new mystery projects
+- `cli_mystery_starter/`: the Python package that scaffolds, validates, playtests, and verifies new mystery projects
 - `docs/`: documentation for the starter pack and its authoring model
 - `design_rules_cli/`: reusable design-study material for CLI mystery game structure
 
@@ -16,7 +16,8 @@ Use this repository when you want to:
 - create a new text-first mystery game played through shell commands
 - scaffold the file and folder structure for that game quickly
 - keep authoring artifacts such as story truth and clue graphs separate from puzzle data
-- validate the basic shape of a project before sharing or shipping it
+- validate the project contract before sharing or shipping it
+- locally playtest a project with a reusable investigation shell
 
 This repository is an authoring toolchain and reference pack, not a finished game.
 
@@ -37,10 +38,12 @@ E:\cli mystery starter pack
 
 ## The Python Package
 
-The package lives in `cli_mystery_starter/` and exposes two core commands:
+The package lives in `cli_mystery_starter/` and exposes four core commands:
 
 - `init <path>`: create a new mystery scaffold
-- `validate <path>`: run lightweight structural checks
+- `validate <path>`: run scaffold and content-contract checks
+- `play <path>`: run a mystery project in the reusable investigation shell
+- `check-answer <path> <guess>`: verify a suspect name against a project
 
 The generated project shape is centered around:
 
@@ -56,19 +59,25 @@ From the package directory:
 
 ```bash
 cd cli_mystery_starter
-python -m cli_mystery_starter init my-mystery
+python dev.py init my-mystery
 ```
 
 To validate an authored project:
 
 ```bash
-python -m cli_mystery_starter validate my-mystery
+python dev.py validate my-mystery
+```
+
+To locally playtest an authored project:
+
+```bash
+python dev.py play my-mystery
 ```
 
 If you want to customize the scaffold metadata, pass a JSON config:
 
 ```bash
-python -m cli_mystery_starter init my-mystery --config examples/mystery_config.json
+python dev.py init my-mystery --config examples/mystery_config.json
 ```
 
 ## Recommended Authoring Flow
@@ -103,7 +112,7 @@ The starter pack assumes a specific style of game design:
 
 - the filesystem is part of the gameplay surface
 - shell commands are the primary player interaction model
-- code supports authoring and validation, rather than acting as the game engine
+- code supports authoring, validation, and local playtesting, rather than being the shipped game itself
 - puzzle quality depends on clue design, not on runtime complexity
 
 ## Current Limitations
@@ -121,5 +130,5 @@ Those remain author responsibilities.
 
 If you need one sentence:
 
-`cli mystery starter pack` is a small Python-based workspace for scaffolding,
-documenting, and validating filesystem-based command-line mystery games.
+`cli mystery starter pack` is a Python-based workspace for scaffolding, validating, and
+local-playtesting filesystem-based command-line mystery games.

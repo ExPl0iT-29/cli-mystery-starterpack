@@ -4,7 +4,8 @@
 
 This workspace is a starter pack for building filesystem-based CLI mystery games.
 Its main deliverable is the Python package in `cli_mystery_starter/`, which exposes a
-small command-line interface for creating and validating new mystery projects.
+small command-line interface for creating, validating, playtesting, and verifying new
+mystery projects.
 
 The repository also contains:
 
@@ -13,12 +14,15 @@ The repository also contains:
 
 ## What The Package Does
 
-The package supports two core workflows:
+The package supports four core workflows:
 
 1. `init`: scaffold a new mystery project from templates
-2. `validate`: run lightweight structural checks against an authored project
+2. `validate`: run scaffold and content-contract checks against an authored project
+3. `play`: locally run a project in the reusable investigation shell
+4. `check-answer`: verify a suspect name against the encoded solution
 
-This makes the repository an authoring tool, not a playable game runtime.
+This makes the repository an authoring and development tool, not a packaged game in
+itself.
 
 ## Primary Users
 
@@ -50,9 +54,11 @@ E:\cli mystery starter pack
 The package implementation is intentionally small:
 
 - `cli.py`: argument parsing and command dispatch
+- `runtime.py`: reusable investigation shell for authored projects
+- `answer.py`: answer verification helper
 - `scaffold.py`: config loading and file generation
 - `templates.py`: text templates for generated files
-- `validation.py`: structural checks for scaffolded projects
+- `validation.py`: project-contract checks for scaffolded projects
 
 ## CLI Surface
 
@@ -75,7 +81,23 @@ python -m cli_mystery_starter init my-mystery --config mystery_config.json
 Run the built-in validation pass against an authored project:
 
 ```bash
-python -m cli_mystery_starter validate my-mystery
+python dev.py validate my-mystery
+```
+
+### Playtest A Project
+
+Run the reusable investigation shell against an authored project:
+
+```bash
+python dev.py play my-mystery
+```
+
+### Check An Answer
+
+Verify a suspect name against a project:
+
+```bash
+python dev.py check-answer my-mystery "John Doe"
 ```
 
 ## Generated Project Shape
@@ -104,10 +126,9 @@ The starter pack assumes a specific game model:
 
 This project does not currently provide:
 
-- a gameplay engine
-- interactive runtime state
+- persistent runtime state
 - save/load mechanics
-- rich puzzle validation beyond a few structural checks
+- rich puzzle validation beyond the starter contract
 - content-generation pipelines out of the box
 
 Those are deliberate omissions. The starter pack is optimized for simple, portable,
@@ -123,5 +144,5 @@ text-first mystery projects.
 
 Describe this repository as:
 
-`cli-mystery-starter` is a small Python authoring tool that scaffolds and validates
-filesystem-based command-line mystery games.
+`cli-mystery-starter` is a Python authoring tool that scaffolds, validates, and locally
+playtests filesystem-based command-line mystery games.

@@ -12,7 +12,7 @@ The package has four main responsibilities:
 1. read configuration
 2. create the target directory structure
 3. write templated starter files
-4. validate required paths and a small number of content invariants
+4. validate project compatibility and content invariants
 
 ## Configuration Model
 
@@ -57,11 +57,16 @@ The scaffold writes a fixed starter set:
 - `instructions`
 - `solution`
 - `encoded`
+- `play.py`
 - `game/incident`
 - `game/people`
+- `game/interviews/README.md`
 - `game/locations/East_Hall`
 - `game/locations/North_Wing`
 - `game/locations/South_Annex`
+- `game/memberships/README.md`
+- `game/logs/README.md`
+- `game/registry/README.md`
 - `hints/hint1`
 - `hints/hint2`
 - `hints/hint3`
@@ -71,6 +76,7 @@ The scaffold writes a fixed starter set:
 - `docs/data_schemas.md`
 - `docs/notes.md`
 - `tools/README.md`
+- `tools/check_answer.py`
 - `mystery_config.json`
 
 ## Logical Artifact Roles
@@ -81,6 +87,7 @@ The scaffold writes a fixed starter set:
 - `instructions`: player-facing start file
 - `solution`: answer verification instructions
 - `encoded`: stored answer hash placeholder
+- `play.py`: thin runtime entry point into the starter package
 - `mystery_config.json`: persisted scaffold config
 
 ### `game/`
@@ -109,10 +116,11 @@ This is project-specific author documentation inside a scaffolded game.
 ### `tools/`
 
 Reserved for optional author tooling such as generators, checkers, or release helpers.
+The scaffold seeds `tools/check_answer.py` as a thin wrapper around the package helper.
 
 ## Validation Contract
 
-`validation.py` enforces a deliberately small set of checks.
+`validation.py` enforces the starter-pack compatibility contract.
 
 ### Required Paths
 
@@ -122,16 +130,25 @@ Validation fails if any of these are missing:
 - `instructions`
 - `solution`
 - `encoded`
+- `play.py`
 - `game/incident`
 - `game/people`
+- `hints/hint1`
+- `hints/hint2`
+- `hints/hint3`
+- `hints/hint4`
 - `design/story_bible.md`
 - `design/clue_graph.md`
 - `docs/data_schemas.md`
+- `tools/check_answer.py`
 
 ### Config-Aware Check
 
-If `mystery_config.json` exists and parses successfully, validation checks that
-`game/incident` contains the configured `clue_marker`.
+If `mystery_config.json` exists and parses successfully, validation checks that:
+
+- `game/incident` contains the configured `clue_marker`
+- the incident contains at least three clue markers
+- configured folders exist
 
 ### `game/people` Check
 
@@ -139,6 +156,16 @@ Validation expects `game/people` to contain:
 
 - at least one header line
 - at least one data record
+- a header that uses either `|` or tab delimiters
+
+### Additional Checks
+
+Validation also checks:
+
+- `encoded` looks like a lowercase MD5 digest
+- evidence-family directories contain at least one file
+- `play.py` calls the package runtime helper
+- `tools/check_answer.py` calls the package answer helper
 
 This is a minimal sanity check, not full schema validation.
 
@@ -154,7 +181,7 @@ The templates encode several authoring assumptions:
 
 ## Important Limitations
 
-The current contract does not validate:
+The current contract still does not validate:
 
 - schema consistency across evidence families
 - whether the mystery has exactly one valid solution
@@ -162,8 +189,8 @@ The current contract does not validate:
 - whether `encoded` matches the intended answer
 - whether generated filler data contradicts the story bible
 
-That means maintainers should treat the current validator as a smoke test, not as a
-completeness gate.
+That means maintainers should treat the current validator as a stronger compatibility
+gate, but not as a completeness or fairness proof.
 
 ## Maintenance Guidance
 

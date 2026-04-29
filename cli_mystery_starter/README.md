@@ -1,35 +1,40 @@
 # CLI Mystery Starter
 
-A reusable Python starter repo for building command-line mystery games where the filesystem is the game board.
+A reusable Python starter pack for building, validating, and local-playtesting
+filesystem-based CLI mystery games.
 
 ## What This Includes
 
 - a Python package under `src/`
-- a CLI command to scaffold a new mystery project
-- lightweight content validation
+- CLI commands to scaffold, validate, play, and verify mystery projects
+- stronger project validation for scaffold compatibility
+- a reusable investigation shell for local author playtesting
 - starter templates for:
+  - `play.py`
   - `instructions`
   - hints
   - docs
   - game data folders
-  - answer verification
+  - answer verification wrappers
 - a sample design config file
+- a root `dev.py` launcher for local development without editable install
 
 ## Recommended Use
 
-Create new projects with:
+From this directory during local development:
+
+```bash
+python dev.py init my-mystery
+```
+
+If the package is installed or your environment already exposes `cli_mystery_starter`,
+the equivalent command is:
 
 ```bash
 python -m cli_mystery_starter init my-mystery
 ```
 
-Or, from this folder:
-
-```bash
-python -m src.cli_mystery_starter init my-mystery
-```
-
-Then edit:
+Then author the game content:
 
 - `design/story_bible.md`
 - `design/clue_graph.md`
@@ -39,16 +44,27 @@ Then edit:
 - `game/locations/`
 - `hints/`
 
+Then playtest:
+
+```bash
+cd my-mystery
+python play.py
+```
+
 ## Structure
 
 ```text
 cli_mystery_starter/
+├─ dev.py
 ├─ pyproject.toml
+├─ tests/
 ├─ src/
 │  └─ cli_mystery_starter/
 │     ├─ __init__.py
 │     ├─ __main__.py
+│     ├─ answer.py
 │     ├─ cli.py
+│     ├─ runtime.py
 │     ├─ scaffold.py
 │     ├─ validation.py
 │     └─ templates.py
@@ -60,7 +76,51 @@ cli_mystery_starter/
 ## Commands
 
 - `init <path>`: create a new mystery project scaffold
-- `validate <path>`: run lightweight checks against a scaffolded project
+- `validate <path>`: run scaffold and content-contract checks against a project
+- `play <path>`: run a project in the reusable investigation shell
+- `check-answer <path> <guess>`: verify a suspect name against a project
+
+## Local Development
+
+This repository uses a `src/` layout. For local development, use:
+
+```bash
+python dev.py <command> ...
+```
+
+Examples:
+
+```bash
+python dev.py init my-mystery
+python dev.py validate my-mystery
+python dev.py play my-mystery
+python dev.py check-answer my-mystery "John Doe"
+```
+
+If you prefer direct module execution, set `PYTHONPATH=src` first or install the package
+in editable mode.
+
+## Validation Contract
+
+Validation now checks:
+
+- required scaffold files and folders
+- presence of `play.py` and `tools/check_answer.py`
+- valid `mystery_config.json`
+- clue marker presence and minimum clue count in `game/incident`
+- basic `game/people` structure
+- `encoded` hash format
+- wrapper integrity for runtime and answer-check helpers
+
+Validation still does not prove puzzle quality or unique solvability.
+
+## Tests
+
+Run the automated test suite from this directory:
+
+```bash
+python -m unittest discover -s tests
+```
 
 ## Why Python
 
