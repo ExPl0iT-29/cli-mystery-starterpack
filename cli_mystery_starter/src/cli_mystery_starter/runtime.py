@@ -10,6 +10,7 @@ from . import contract, verifier
 from .clues import ClueRegistry, load_clues
 from .events import EventBus
 from .session import SessionStore
+from .solutions import load_solutions, parse_accusation
 
 
 SURFACES = contract.surfaces_map()
@@ -97,6 +98,7 @@ class InvestigationShell(cmd.Cmd):
         clues, _clue_errors = load_clues(self.project_root)
         self.clue_registry = ClueRegistry(clues)
         self.clue_registry.attach(self.events, initial=state.get("discovered_clues", []))
+        self.solutions, _solution_errors = load_solutions(self.project_root)
         self._wire_default_subscribers()
         self.prompt = self._prompt()
 
@@ -362,14 +364,41 @@ class InvestigationShell(cmd.Cmd):
         print((self.project_root / "hints" / f"hint{num}").read_text(encoding="utf-8"))
 
     def do_accuse(self, arg: str) -> None:
-        """accuse <name>   submit your final answer; case-sensitive, whitespace tolerant"""
-        name = arg.strip()
-        if not name:
-            print("Usage: accuse <name>")
+        """accuse <name>                                 (legacy: culprit only)
+        accuse culprit=<x> motive=<y> weapon=<z>      (multi-field, when solutions.json declares fields)
+        """
+        raw = arg.strip()
+        if not raw:
+            print("Usage: accuse <name>  OR  accuse culprit=<x> motive=<y> ...")
             return
-        correct = check_answer(self.project_root, name)
-        self.events.emit("accuse:attempt", {"guess": name, "correct": correct})
-        if correct:
+
+        if self.solutions is not None:
+            guesses = parse_accusation(raw)
+            correct, ending = self.solutions.evaluate(guesses)
+            payload = {
+                "guess": raw,
+                "correct": ending is not None,
+                "fields_correct": sorted(correct),
+                "ending": ending.id if ending else None,
+            }
+            self.events.emit("accuse:attempt", payload)
+            if ending is None:
+                missed = [k for k in self.solutions.fields if k not in correct]
+                print("That accusation does not unlock any ending.")
+                if correct:
+                    print(f"You got right: {', '.join(sorted(correct))}")
+                if missed:
+                    print(f"Still wrong or unanswered: {', '.join(missed)}")
+                return
+            if ending.text:
+                print(ending.text)
+            print(f"You completed {self.title}: {ending.id}")
+            return
+
+        # Legacy fallback: single-field MD5 check against `encoded`.
+        correct_legacy = check_answer(self.project_root, raw)
+        self.events.emit("accuse:attempt", {"guess": raw, "correct": correct_legacy})
+        if correct_legacy:
             print("Accusation accepted.")
             print(f"You solved {self.title}.")
         else:

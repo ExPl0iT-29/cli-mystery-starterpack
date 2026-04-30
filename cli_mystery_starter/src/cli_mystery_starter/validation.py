@@ -5,6 +5,7 @@ from pathlib import Path
 
 from . import verifier
 from .clues import load_clues
+from .solutions import load_solutions
 
 
 PLACEHOLDER_ANSWER = "John Doe"
@@ -104,6 +105,10 @@ def validate_project(root: Path) -> list[str]:
     # Optional clues registry: validate shape if the file exists.
     _, clue_errors = load_clues(root)
     errors.extend(clue_errors)
+
+    # Optional multi-ending solutions: validate shape if the file exists.
+    _, solution_errors = load_solutions(root)
+    errors.extend(solution_errors)
 
     for folder in EVIDENCE_FOLDERS:
         path = root / folder
