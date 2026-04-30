@@ -52,6 +52,7 @@ def create_project(target: Path, config: dict) -> list[Path]:
     encoded_value = verifier.hash_answer("John Doe", fmt=answer_format)
 
     files: dict[str, str] = {
+        ".gitignore": templates.gitignore(),
         "README.md": templates.root_readme(project_name, display_title),
         "instructions": templates.instructions(display_title),
         "solution": templates.solution(),

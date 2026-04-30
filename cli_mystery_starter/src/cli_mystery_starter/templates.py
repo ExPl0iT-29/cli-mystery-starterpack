@@ -203,6 +203,16 @@ def data_schemas() -> str:
 """
 
 
+def gitignore() -> str:
+    return """# Per-player session state (notes, suspects, files read)
+.session.json
+.session.json.tmp
+
+# Author-only file revealing the canonical answer
+solution
+"""
+
+
 def family_stub(title: str, purpose: str) -> str:
     return f"""# {title}
 

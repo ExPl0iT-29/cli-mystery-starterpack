@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 from . import contract, verifier
+from .session import SessionStore
 
 
 SURFACES = contract.surfaces_map()
@@ -86,9 +87,10 @@ class InvestigationShell(cmd.Cmd):
             "Type 'help' for commands. Start with 'ls' or 'cat incident'.\n"
         )
         self.current = self.game_root
-        self.suspects: list[str] = []
-        self.case_notes: list[str] = []
-        self.visited: set[str] = set()
+        state = SessionStore.load(self.project_root)
+        self.case_notes: list[str] = list(state["notes"])
+        self.suspects: list[str] = list(state["suspects"])
+        self.visited: set[str] = set(state["visited"])
         self.prompt = self._prompt()
 
     def _prompt(self) -> str:
@@ -98,6 +100,14 @@ class InvestigationShell(cmd.Cmd):
     def _set_current(self, path: Path) -> None:
         self.current = path
         self.prompt = self._prompt()
+
+    def _persist(self) -> None:
+        SessionStore.save(
+            self.project_root,
+            notes=self.case_notes,
+            suspects=self.suspects,
+            visited=self.visited,
+        )
 
     def _read_file(self, path: Path) -> str:
         if not path.exists():
@@ -297,6 +307,7 @@ class InvestigationShell(cmd.Cmd):
             print("Usage: note <text>")
             return
         self.case_notes.append(text)
+        self._persist()
         print(f"Saved note {len(self.case_notes)}.")
 
     def do_notes(self, arg: str) -> None:
@@ -314,6 +325,7 @@ class InvestigationShell(cmd.Cmd):
             print("Usage: mark <name>")
             return
         self.suspects.append(name)
+        self._persist()
         print(f"Tracked suspect: {name}")
 
     def do_suspects(self, arg: str) -> None:
@@ -370,13 +382,37 @@ class InvestigationShell(cmd.Cmd):
             "  suspects          list tracked suspects\n"
             "  note <text>       save a note\n"
             "  notes             list notes\n"
+            "  journal           recap files read, suspects, and notes\n"
+            "  save              persist progress to .session.json\n"
             "  accuse <name>     submit final answer\n"
-            "  quit              exit the game\n"
+            "  quit              save progress and exit\n"
         )
 
     def do_quit(self, arg: str) -> bool:
+        """quit   save your progress and exit"""
+        self._persist()
         print("Case file closed.")
         return True
+
+    def do_save(self, arg: str) -> None:
+        """save   write your notes, suspects, and visited files to .session.json"""
+        self._persist()
+        print(f"Session saved to {SessionStore.FILENAME}.")
+
+    def do_journal(self, arg: str) -> None:
+        """journal   recap of files read, suspects marked, and notes recorded"""
+        visited = sorted(self.visited)
+        print(f"Files read: {len(visited)}")
+        for path in visited:
+            print(f"  {path}")
+        if self.suspects:
+            print(f"\nSuspects ({len(self.suspects)}):")
+            for name in self.suspects:
+                print(f"  - {name}")
+        if self.case_notes:
+            print(f"\nNotes ({len(self.case_notes)}):")
+            for idx, note in enumerate(self.case_notes, start=1):
+                print(f"  {idx}. {note}")
 
     def do_exit(self, arg: str) -> bool:
         return self.do_quit(arg)

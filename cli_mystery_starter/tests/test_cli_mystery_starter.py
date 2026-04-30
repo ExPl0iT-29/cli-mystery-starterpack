@@ -196,6 +196,49 @@ class StarterPackTests(unittest.TestCase):
             shell.onecmd("help cat")
         self.assertIn("cat <path>", buffer.getvalue())
 
+    def test_session_persists_notes_and_suspects_across_runs(self) -> None:
+        target = self.scaffold_case()
+        shell1 = InvestigationShell(target)
+        with redirect_stdout(io.StringIO()):
+            shell1.onecmd("note Suspect was at the gala until midnight")
+            shell1.onecmd("mark Maria Ortega")
+            shell1.onecmd("cat incident")
+            shell1.onecmd("quit")
+        self.assertTrue((target / ".session.json").exists())
+        # Fresh shell should restore prior state
+        shell2 = InvestigationShell(target)
+        self.assertEqual(shell2.case_notes,
+                         ["Suspect was at the gala until midnight"])
+        self.assertEqual(shell2.suspects, ["Maria Ortega"])
+        self.assertIn("game/incident", shell2.visited)
+
+    def test_session_ignores_corrupt_state(self) -> None:
+        target = self.scaffold_case()
+        (target / ".session.json").write_text("{not json", encoding="utf-8")
+        shell = InvestigationShell(target)
+        self.assertEqual(shell.case_notes, [])
+        self.assertEqual(shell.suspects, [])
+
+    def test_journal_recaps_progress(self) -> None:
+        target = self.scaffold_case()
+        shell = InvestigationShell(target)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            shell.onecmd("cat incident")
+            shell.onecmd("note check chandelier")
+            shell.onecmd("mark Maria")
+            shell.onecmd("journal")
+        out = buffer.getvalue()
+        self.assertIn("game/incident", out)
+        self.assertIn("Maria", out)
+        self.assertIn("check chandelier", out)
+
+    def test_scaffold_writes_gitignore_protecting_session_and_solution(self) -> None:
+        target = self.scaffold_case()
+        gi = (target / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn(".session.json", gi)
+        self.assertIn("solution", gi)
+
     def test_eof_quits_cleanly(self) -> None:
         target = self.scaffold_case()
         shell = InvestigationShell(target)
