@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 from . import contract, verifier
+from .events import EventBus
 from .session import SessionStore
 
 
@@ -91,7 +92,13 @@ class InvestigationShell(cmd.Cmd):
         self.case_notes: list[str] = list(state["notes"])
         self.suspects: list[str] = list(state["suspects"])
         self.visited: set[str] = set(state["visited"])
+        self.events = EventBus()
+        self._wire_default_subscribers()
         self.prompt = self._prompt()
+
+    def _wire_default_subscribers(self) -> None:
+        """Subclasses or extensions can override to register more handlers."""
+        return None
 
     def _prompt(self) -> str:
         rel = self.current.relative_to(self.project_root)
@@ -121,7 +128,9 @@ class InvestigationShell(cmd.Cmd):
                 f"Cannot read {format_project_path(path, self.project_root)}: not UTF-8 text "
                 f"(decode error at byte {exc.start})"
             ) from exc
-        self.visited.add(format_project_path(path, self.project_root))
+        rel = format_project_path(path, self.project_root)
+        self.visited.add(rel)
+        self.events.emit("file:read", {"path": rel})
         return text
 
     def _iter_files(self, path: Path) -> list[Path]:
@@ -307,6 +316,7 @@ class InvestigationShell(cmd.Cmd):
             print("Usage: note <text>")
             return
         self.case_notes.append(text)
+        self.events.emit("note:added", {"text": text, "index": len(self.case_notes)})
         self._persist()
         print(f"Saved note {len(self.case_notes)}.")
 
@@ -325,6 +335,7 @@ class InvestigationShell(cmd.Cmd):
             print("Usage: mark <name>")
             return
         self.suspects.append(name)
+        self.events.emit("suspect:marked", {"name": name})
         self._persist()
         print(f"Tracked suspect: {name}")
 
@@ -342,6 +353,7 @@ class InvestigationShell(cmd.Cmd):
         if num not in {"1", "2", "3", "4"}:
             print("Usage: hint <1-4>")
             return
+        self.events.emit("hint:read", {"number": int(num)})
         print((self.project_root / "hints" / f"hint{num}").read_text(encoding="utf-8"))
 
     def do_accuse(self, arg: str) -> None:
@@ -350,7 +362,9 @@ class InvestigationShell(cmd.Cmd):
         if not name:
             print("Usage: accuse <name>")
             return
-        if check_answer(self.project_root, name):
+        correct = check_answer(self.project_root, name)
+        self.events.emit("accuse:attempt", {"guess": name, "correct": correct})
+        if correct:
             print("Accusation accepted.")
             print(f"You solved {self.title}.")
         else:
