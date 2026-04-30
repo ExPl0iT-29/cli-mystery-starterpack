@@ -157,6 +157,45 @@ class StarterPackTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             MysteryConfig.from_dict({"answer_format": "rot13"})
 
+    def test_find_verb_lists_filename_matches(self) -> None:
+        target = self.scaffold_case()
+        shell = InvestigationShell(target)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            shell.onecmd("find hint /hints")
+        output = buffer.getvalue()
+        self.assertIn("hints/hint1", output)
+        self.assertIn("hints/hint4", output)
+
+    def test_progress_reports_visited_files(self) -> None:
+        target = self.scaffold_case()
+        shell = InvestigationShell(target)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            shell.onecmd("cat incident")
+            shell.onecmd("progress")
+        out = buffer.getvalue()
+        self.assertRegex(out, r"Read 1/\d+ game files")
+
+    def test_grep_skips_binary_without_crashing(self) -> None:
+        target = self.scaffold_case()
+        # Plant a binary file in an evidence folder
+        (target / "game" / "logs" / "blob.bin").write_bytes(b"\x00\x01\x02\xff\xfe")
+        shell = InvestigationShell(target)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            shell.onecmd("grep placeholder logs")
+        # No traceback; output exists (may or may not have hits depending on stubs)
+        self.assertNotIn("Traceback", buffer.getvalue())
+
+    def test_help_topic_uses_docstring(self) -> None:
+        target = self.scaffold_case()
+        shell = InvestigationShell(target)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            shell.onecmd("help cat")
+        self.assertIn("cat <path>", buffer.getvalue())
+
     def test_eof_quits_cleanly(self) -> None:
         target = self.scaffold_case()
         shell = InvestigationShell(target)

@@ -88,6 +88,7 @@ class InvestigationShell(cmd.Cmd):
         self.current = self.game_root
         self.suspects: list[str] = []
         self.case_notes: list[str] = []
+        self.visited: set[str] = set()
         self.prompt = self._prompt()
 
     def _prompt(self) -> str:
@@ -103,7 +104,15 @@ class InvestigationShell(cmd.Cmd):
             raise ValueError(f"Not found: {format_project_path(path, self.project_root)}")
         if path.is_dir():
             raise ValueError(f"Is a directory: {format_project_path(path, self.project_root)}")
-        return path.read_text(encoding="utf-8")
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            raise ValueError(
+                f"Cannot read {format_project_path(path, self.project_root)}: not UTF-8 text "
+                f"(decode error at byte {exc.start})"
+            ) from exc
+        self.visited.add(format_project_path(path, self.project_root))
+        return text
 
     def _iter_files(self, path: Path) -> list[Path]:
         if path.is_file():
@@ -111,9 +120,11 @@ class InvestigationShell(cmd.Cmd):
         return sorted(p for p in path.rglob("*") if p.is_file())
 
     def do_pwd(self, arg: str) -> None:
+        """pwd   print the current working directory inside the case file"""
         print(format_project_path(self.current, self.project_root))
 
     def do_ls(self, arg: str) -> None:
+        """ls [path]   list directory contents"""
         raw = arg.strip()
         try:
             target = resolve_project_path(self.current, self.project_root, raw) if raw else self.current
@@ -130,6 +141,7 @@ class InvestigationShell(cmd.Cmd):
             print(f"{entry.name}{'/' if entry.is_dir() else ''}")
 
     def do_cd(self, arg: str) -> None:
+        """cd <path>   change directory; defaults to `game/` when called without an argument"""
         raw = arg.strip() or "game"
         try:
             target = resolve_project_path(self.current, self.project_root, raw)
@@ -142,6 +154,7 @@ class InvestigationShell(cmd.Cmd):
         self._set_current(target)
 
     def do_cat(self, arg: str) -> None:
+        """cat <path>   print the contents of a file"""
         raw = arg.strip()
         if not raw:
             print("Usage: cat <path>")
@@ -152,6 +165,7 @@ class InvestigationShell(cmd.Cmd):
             print(exc)
 
     def do_head(self, arg: str) -> None:
+        """head <path> [count]   print the first `count` lines (default 10)"""
         parts = shlex.split(arg)
         if not parts:
             print("Usage: head <path> [count]")
@@ -169,6 +183,7 @@ class InvestigationShell(cmd.Cmd):
         print("\n".join(text.splitlines()[:count]))
 
     def do_tail(self, arg: str) -> None:
+        """tail <path> [count]   print the last `count` lines (default 10)"""
         parts = shlex.split(arg)
         if not parts:
             print("Usage: tail <path> [count]")
@@ -186,6 +201,7 @@ class InvestigationShell(cmd.Cmd):
         print("\n".join(text.splitlines()[-count:]))
 
     def do_grep(self, arg: str) -> None:
+        """grep <text> [path]   case-insensitive substring search across file contents"""
         parts = shlex.split(arg)
         if not parts:
             print("Usage: grep <pattern> [path]")
@@ -201,15 +217,61 @@ class InvestigationShell(cmd.Cmd):
             return
         hits = 0
         for file_path in self._iter_files(base):
-            lines = file_path.read_text(encoding="utf-8").splitlines()
-            for idx, line in enumerate(lines, start=1):
-                if pattern in line.lower():
-                    print(f"{format_project_path(file_path, self.project_root)}:{idx}: {line}")
-                    hits += 1
+            try:
+                with file_path.open("r", encoding="utf-8") as fh:
+                    for idx, line in enumerate(fh, start=1):
+                        if pattern in line.lower():
+                            line_out = line.rstrip("\n")
+                            print(f"{format_project_path(file_path, self.project_root)}:{idx}: {line_out}")
+                            hits += 1
+            except (UnicodeDecodeError, OSError):
+                continue
         if hits == 0:
             print("No matches.")
 
+    def do_find(self, arg: str) -> None:
+        """find <substring> [path]   list filenames matching substring (case-insensitive)"""
+        parts = shlex.split(arg)
+        if not parts:
+            print("Usage: find <substring> [path]")
+            return
+        needle = parts[0].lower()
+        try:
+            base = (
+                resolve_project_path(self.current, self.project_root, parts[1])
+                if len(parts) > 1 else self.current
+            )
+        except ValueError as exc:
+            print(exc)
+            return
+        if not base.exists():
+            print("Path not found.")
+            return
+        hits = 0
+        for file_path in self._iter_files(base):
+            if needle in file_path.name.lower():
+                print(format_project_path(file_path, self.project_root))
+                hits += 1
+        if hits == 0:
+            print("No matching filenames.")
+
+    def do_progress(self, arg: str) -> None:
+        """progress   summarize how much of the case file you have read"""
+        all_files = self._iter_files(self.game_root)
+        total = len(all_files)
+        seen = sum(
+            1 for p in all_files
+            if format_project_path(p, self.project_root) in self.visited
+        )
+        pct = (seen / total * 100) if total else 0.0
+        print(f"Read {seen}/{total} game files ({pct:.0f}%).")
+        if self.suspects:
+            print(f"Tracking {len(self.suspects)} suspect(s).")
+        if self.case_notes:
+            print(f"{len(self.case_notes)} note(s) recorded.")
+
     def do_open(self, arg: str) -> None:
+        """open <surface>   jump to a known surface (incident, people, logs, ...)"""
         key = arg.strip().lower()
         path_parts = SURFACES.get(key)
         if path_parts is None:
@@ -229,6 +291,7 @@ class InvestigationShell(cmd.Cmd):
             print(exc)
 
     def do_note(self, arg: str) -> None:
+        """note <text>   record a free-form investigation note"""
         text = arg.strip()
         if not text:
             print("Usage: note <text>")
@@ -237,6 +300,7 @@ class InvestigationShell(cmd.Cmd):
         print(f"Saved note {len(self.case_notes)}.")
 
     def do_notes(self, arg: str) -> None:
+        """notes   list every note recorded this session"""
         if not self.case_notes:
             print("No notes yet.")
             return
@@ -244,6 +308,7 @@ class InvestigationShell(cmd.Cmd):
             print(f"{idx}. {note}")
 
     def do_mark(self, arg: str) -> None:
+        """mark <name>   add a name to the suspect list"""
         name = arg.strip()
         if not name:
             print("Usage: mark <name>")
@@ -252,6 +317,7 @@ class InvestigationShell(cmd.Cmd):
         print(f"Tracked suspect: {name}")
 
     def do_suspects(self, arg: str) -> None:
+        """suspects   list every name marked as a suspect this session"""
         if not self.suspects:
             print("No suspects tracked.")
             return
@@ -259,6 +325,7 @@ class InvestigationShell(cmd.Cmd):
             print(f"{idx}. {suspect}")
 
     def do_hint(self, arg: str) -> None:
+        """hint <1-4>   read a progressive hint"""
         num = arg.strip()
         if num not in {"1", "2", "3", "4"}:
             print("Usage: hint <1-4>")
@@ -266,6 +333,7 @@ class InvestigationShell(cmd.Cmd):
         print((self.project_root / "hints" / f"hint{num}").read_text(encoding="utf-8"))
 
     def do_accuse(self, arg: str) -> None:
+        """accuse <name>   submit your final answer; case-sensitive, whitespace tolerant"""
         name = arg.strip()
         if not name:
             print("Usage: accuse <name>")
@@ -277,8 +345,13 @@ class InvestigationShell(cmd.Cmd):
             print("That accusation does not match the evidence trail.")
 
     def do_help(self, arg: str) -> None:
-        if arg.strip():
-            super().do_help(arg)
+        topic = arg.strip()
+        if topic:
+            method = getattr(self, f"do_{topic}", None)
+            if method and method.__doc__:
+                print(method.__doc__.strip())
+                return
+            print(f"No help available for {topic!r}.")
             return
         print(
             "Commands:\n"
@@ -288,8 +361,10 @@ class InvestigationShell(cmd.Cmd):
             "  cat <path>        print a file\n"
             "  head <path> [n]   show first lines\n"
             "  tail <path> [n]   show last lines\n"
-            "  grep <text> [p]   search files\n"
+            "  grep <text> [p]   search file contents\n"
+            "  find <text> [p]   search filenames\n"
             "  open <surface>    jump to incident/people/logs/interviews/locations/registry/memberships/hints/design\n"
+            "  progress          show how much of the case you have read\n"
             "  hint <1-4>        read a hint\n"
             "  mark <name>       track a suspect\n"
             "  suspects          list tracked suspects\n"
