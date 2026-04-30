@@ -5,6 +5,7 @@ from pathlib import Path
 
 from . import verifier
 from .clues import load_clues
+from .dialogue import load_dialogue
 from .solutions import load_solutions
 
 
@@ -109,6 +110,10 @@ def validate_project(root: Path) -> list[str]:
     # Optional multi-ending solutions: validate shape if the file exists.
     _, solution_errors = load_solutions(root)
     errors.extend(solution_errors)
+
+    # Optional NPC dialogue files: validate shape if any exist.
+    _, dialogue_errors = load_dialogue(root)
+    errors.extend(dialogue_errors)
 
     for folder in EVIDENCE_FOLDERS:
         path = root / folder

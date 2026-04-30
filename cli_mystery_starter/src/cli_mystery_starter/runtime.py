@@ -8,6 +8,7 @@ from pathlib import Path
 
 from . import contract, verifier
 from .clues import ClueRegistry, load_clues
+from .dialogue import load_dialogue
 from .events import EventBus
 from .session import SessionStore
 from .solutions import load_solutions, parse_accusation
@@ -99,6 +100,7 @@ class InvestigationShell(cmd.Cmd):
         self.clue_registry = ClueRegistry(clues)
         self.clue_registry.attach(self.events, initial=state.get("discovered_clues", []))
         self.solutions, _solution_errors = load_solutions(self.project_root)
+        self.npcs, _dialogue_errors = load_dialogue(self.project_root)
         self._wire_default_subscribers()
         self.prompt = self._prompt()
 
@@ -431,6 +433,7 @@ class InvestigationShell(cmd.Cmd):
             "  note <text>       save a note\n"
             "  notes             list notes\n"
             "  clues             list discovered clues (if the case declares any)\n"
+            "  ask <npc> [about <topic>]   probe an NPC (if the case declares any)\n"
             "  journal           recap files read, suspects, and notes\n"
             "  save              persist progress to .session.json\n"
             "  accuse <name>     submit final answer\n"
@@ -447,6 +450,74 @@ class InvestigationShell(cmd.Cmd):
         """save   write your notes, suspects, and visited files to .session.json"""
         self._persist()
         print(f"Session saved to {SessionStore.FILENAME}.")
+
+    def do_ask(self, arg: str) -> None:
+        """ask <npc>                       list available topics for an NPC
+        ask <npc> about <topic-id>     hear what they have to say on that topic
+        """
+        if not self.npcs:
+            print("No NPCs declared for this case (add files under game/dialogue/).")
+            return
+        raw = arg.strip()
+        if not raw:
+            print("Usage: ask <npc> [about <topic>]")
+            print("Available NPCs: " + ", ".join(sorted(self.npcs)))
+            return
+
+        try:
+            tokens = shlex.split(raw)
+        except ValueError:
+            tokens = raw.split()
+
+        npc_key = tokens[0].lower()
+        npc = self.npcs.get(npc_key)
+        if npc is None:
+            print(f"Unknown NPC `{tokens[0]}`. Try: " + ", ".join(sorted(self.npcs)))
+            return
+
+        # `ask <npc>` → greet + list available topics
+        if len(tokens) == 1:
+            if npc.greeting:
+                print(f"{npc.name}: {npc.greeting}")
+            available = [t for t in npc.topics
+                         if t.is_available(self.clue_registry.discovered)]
+            if not available:
+                print("(No topics are available yet — keep investigating.)")
+                return
+            print("Topics you can ask about:")
+            for topic in available:
+                print(f"  - {topic.id}: {topic.summary}")
+            return
+
+        # `ask <npc> about <topic>`
+        if len(tokens) < 3 or tokens[1].lower() != "about":
+            print("Usage: ask <npc> about <topic>")
+            return
+
+        topic_id = tokens[2]
+        topic = npc.topic(topic_id)
+        if topic is None:
+            print(f"{npc.name} does not have anything to say about `{topic_id}`.")
+            return
+        if not topic.is_available(self.clue_registry.discovered):
+            print(f"{npc.name} deflects — you do not have enough evidence to "
+                  f"press them on `{topic_id}` yet.")
+            return
+
+        print(f"{npc.name}: {topic.response}")
+        self.events.emit("dialogue:asked",
+                         {"npc": npc.slug, "topic": topic.id})
+
+        if topic.reveals_clue:
+            valid_ids = {c.id for c in self.clue_registry.clues}
+            if topic.reveals_clue in valid_ids and (
+                topic.reveals_clue not in self.clue_registry.discovered
+            ):
+                self.clue_registry.discovered.add(topic.reveals_clue)
+                self.events.emit("clue:revealed", {"id": topic.reveals_clue,
+                                                    "via": f"ask:{npc.slug}"})
+                print(f"  (new clue discovered: {topic.reveals_clue})")
+        self._persist()
 
     def do_clues(self, arg: str) -> None:
         """clues   list clues you have discovered (requires game/clues.json)"""
