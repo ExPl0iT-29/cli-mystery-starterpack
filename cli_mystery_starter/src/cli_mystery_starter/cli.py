@@ -6,6 +6,7 @@ from pathlib import Path
 from .answer import check_answer_command
 from .runtime import play_project
 from .scaffold import create_project, load_config
+from .solver import check_solve_command
 from .validation import validate_project
 
 
@@ -32,6 +33,12 @@ def build_parser() -> argparse.ArgumentParser:
     answer_parser = subparsers.add_parser("check-answer", help="Check a suspect name against a mystery project")
     answer_parser.add_argument("target", help="Target project directory")
     answer_parser.add_argument("guess", help="Suspect name to verify")
+
+    solve_parser = subparsers.add_parser(
+        "check-solve",
+        help="Heuristic uniqueness check: does the clue graph narrow to one suspect?",
+    )
+    solve_parser.add_argument("target", help="Target project directory")
     return parser
 
 
@@ -63,6 +70,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "check-answer":
         return check_answer_command(Path(args.target).resolve(), args.guess)
+
+    if args.command == "check-solve":
+        return check_solve_command(Path(args.target).resolve())
 
     parser.error("Unknown command")
     return 2
