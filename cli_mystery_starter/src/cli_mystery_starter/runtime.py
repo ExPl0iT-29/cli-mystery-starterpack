@@ -7,17 +7,10 @@ import shlex
 from pathlib import Path
 
 
-SURFACES = {
-    "incident": ("game", "incident"),
-    "people": ("game", "people"),
-    "logs": ("game", "logs"),
-    "interviews": ("game", "interviews"),
-    "locations": ("game", "locations"),
-    "registry": ("game", "registry"),
-    "memberships": ("game", "memberships"),
-    "hints": ("hints",),
-    "design": ("design",),
-}
+from . import contract
+
+
+SURFACES = contract.surfaces_map()
 
 
 def load_title(root: Path) -> str:
@@ -67,6 +60,9 @@ def check_answer(project_root: Path, guess: str) -> bool:
     return digest == expected
 
 
+_RUNTIME_REQUIRED = ("game", "game/incident", "game/people", "hints", "encoded")
+
+
 def validate_runtime_project(project_root: Path) -> list[str]:
     errors: list[str] = []
     if not project_root.exists():
@@ -75,7 +71,7 @@ def validate_runtime_project(project_root: Path) -> list[str]:
     if not project_root.is_dir():
         errors.append(f"Project root is not a directory: {project_root}")
         return errors
-    for rel in ("game", "game/incident", "game/people", "hints", "encoded"):
+    for rel in _RUNTIME_REQUIRED:
         if not (project_root / rel).exists():
             errors.append(f"Missing runtime path: {rel}")
     return errors

@@ -13,43 +13,14 @@ PLACEHOLDER_ANSWER_HASH = hashlib.md5(
 DEFAULT_PROJECT_NAME = "my-cli-mystery"
 
 
-REQUIRED_PATHS = [
-    "README.md",
-    "instructions",
-    "solution",
-    "encoded",
-    "play.py",
-    "game/incident",
-    "game/people",
-    "hints/hint1",
-    "hints/hint2",
-    "hints/hint3",
-    "hints/hint4",
-    "design/story_bible.md",
-    "design/clue_graph.md",
-    "docs/data_schemas.md",
-    "tools/check_answer.py",
-]
+from . import contract
 
-EXPECTED_FOLDERS = [
-    "game/interviews",
-    "game/locations",
-    "game/memberships",
-    "game/logs",
-    "game/registry",
-    "hints",
-    "docs",
-    "design",
-    "tools",
-]
 
-EVIDENCE_FOLDERS = [
-    "game/interviews",
-    "game/locations",
-    "game/memberships",
-    "game/logs",
-    "game/registry",
-]
+# Derived from contract.CONTRACT; kept as module-level lists for back-compat
+# with any external readers that imported these names.
+REQUIRED_PATHS = contract.required_file_paths()
+EXPECTED_FOLDERS = contract.expected_folders()
+EVIDENCE_FOLDERS = contract.evidence_folders()
 
 
 def validate_project(root: Path) -> list[str]:

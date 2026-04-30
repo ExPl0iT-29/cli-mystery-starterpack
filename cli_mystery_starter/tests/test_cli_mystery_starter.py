@@ -110,6 +110,22 @@ class StarterPackTests(unittest.TestCase):
         self.assertIn("incident", out)
         self.assertNotIn("Traceback", out)
 
+    def test_contract_drives_validation_and_runtime_surfaces(self) -> None:
+        from cli_mystery_starter import contract
+        from cli_mystery_starter import validation, runtime
+
+        self.assertEqual(set(validation.REQUIRED_PATHS),
+                         set(contract.required_file_paths()))
+        self.assertEqual(set(validation.EXPECTED_FOLDERS),
+                         set(contract.expected_folders()))
+        self.assertEqual(set(validation.EVIDENCE_FOLDERS),
+                         set(contract.evidence_folders()))
+        self.assertEqual(runtime.SURFACES, contract.surfaces_map())
+        # Contract must keep the canonical six required files at the project root
+        for must_have in ("README.md", "instructions", "encoded",
+                         "play.py", "game/incident", "game/people"):
+            self.assertIn(must_have, validation.REQUIRED_PATHS)
+
     def test_eof_quits_cleanly(self) -> None:
         target = self.scaffold_case()
         shell = InvestigationShell(target)
