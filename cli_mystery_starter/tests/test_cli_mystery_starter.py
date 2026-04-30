@@ -126,6 +126,37 @@ class StarterPackTests(unittest.TestCase):
                          "play.py", "game/incident", "game/people"):
             self.assertIn(must_have, validation.REQUIRED_PATHS)
 
+    def test_fresh_scaffold_uses_sha256_salted_format(self) -> None:
+        from cli_mystery_starter import verifier
+        target = self.scaffold_case()
+        encoded = (target / "encoded").read_text(encoding="utf-8").strip()
+        self.assertEqual(verifier.detect_format(encoded), verifier.FORMAT_SHA256_SALTED)
+        self.assertTrue(verifier.verify(encoded, "John Doe"))
+        self.assertFalse(verifier.verify(encoded, "John Doer"))
+
+    def test_verifier_normalizes_whitespace_on_sha256(self) -> None:
+        from cli_mystery_starter import verifier
+        encoded = verifier.hash_answer("Maria Ortega")
+        self.assertTrue(verifier.verify(encoded, "  Maria   Ortega  "))
+        self.assertFalse(verifier.verify(encoded, "maria ortega"))  # case still matters
+
+    def test_verifier_supports_legacy_md5(self) -> None:
+        from cli_mystery_starter import verifier
+        legacy = verifier.hash_answer("Old Case", fmt=verifier.FORMAT_MD5_LEGACY)
+        self.assertEqual(verifier.detect_format(legacy), verifier.FORMAT_MD5_LEGACY)
+        self.assertTrue(verifier.verify(legacy, "Old Case"))
+
+    def test_config_rejects_unknown_keys_and_unsafe_folders(self) -> None:
+        from cli_mystery_starter.config import MysteryConfig
+        with self.assertRaises(ValueError):
+            MysteryConfig.from_dict({"unknown_key": "x"})
+        with self.assertRaises(ValueError):
+            MysteryConfig.from_dict({"folders": ["../escape"]})
+        with self.assertRaises(ValueError):
+            MysteryConfig.from_dict({"hint_count": 0})
+        with self.assertRaises(ValueError):
+            MysteryConfig.from_dict({"answer_format": "rot13"})
+
     def test_eof_quits_cleanly(self) -> None:
         target = self.scaffold_case()
         shell = InvestigationShell(target)
@@ -141,7 +172,10 @@ class StarterPackTests(unittest.TestCase):
         (target / "encoded").write_text("not-a-hash\n", encoding="utf-8")
         errors = validate_project(target)
         self.assertIn("Missing required path: hints/hint4", errors)
-        self.assertIn("`encoded` must contain a lowercase 32-character MD5 hex digest", errors)
+        self.assertTrue(
+            any("not a recognized answer format" in err for err in errors),
+            f"expected unrecognized-format error, got: {errors}",
+        )
 
     def test_validate_fails_for_insufficient_clues(self) -> None:
         target = self.scaffold_case()

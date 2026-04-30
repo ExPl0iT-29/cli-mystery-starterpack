@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-import hashlib
 import json
-import re
 from pathlib import Path
+
+from . import verifier
 
 
 PLACEHOLDER_ANSWER = "John Doe"
-PLACEHOLDER_ANSWER_HASH = hashlib.md5(
-    PLACEHOLDER_ANSWER.encode("utf-8"), usedforsecurity=False
-).hexdigest()
 DEFAULT_PROJECT_NAME = "my-cli-mystery"
 
 
@@ -71,13 +68,17 @@ def validate_project(root: Path) -> list[str]:
     encoded_path = root / "encoded"
     if encoded_path.exists():
         encoded = encoded_path.read_text(encoding="utf-8").strip()
-        if not re.fullmatch(r"[0-9a-f]{32}", encoded):
-            errors.append("`encoded` must contain a lowercase 32-character MD5 hex digest")
-        elif encoded == PLACEHOLDER_ANSWER_HASH:
+        fmt = verifier.detect_format(encoded)
+        if fmt is None:
+            errors.append(
+                "`encoded` is not a recognized answer format "
+                "(expected `sha256$<salt>$<digest>` or a 32-char MD5 hex digest)"
+            )
+        elif verifier.verify(encoded, PLACEHOLDER_ANSWER):
             project_name = (config or {}).get("project_name") if config is not None else None
             if not project_name or project_name == DEFAULT_PROJECT_NAME:
                 errors.append(
-                    "`encoded` still equals the placeholder `John Doe` answer; "
+                    f"`encoded` still resolves to the placeholder `{PLACEHOLDER_ANSWER}` answer; "
                     "set a real answer before shipping (see `solution` for the one-liner)"
                 )
 

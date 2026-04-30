@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import cmd
-import hashlib
 import json
 import shlex
 from pathlib import Path
 
 
-from . import contract
+from . import contract, verifier
 
 
 SURFACES = contract.surfaces_map()
@@ -55,9 +54,8 @@ def format_project_path(path: Path, root: Path) -> str:
 
 
 def check_answer(project_root: Path, guess: str) -> bool:
-    expected = (project_root / "encoded").read_text(encoding="utf-8").strip()
-    digest = hashlib.md5(guess.strip().encode("utf-8"), usedforsecurity=False).hexdigest()
-    return digest == expected
+    encoded = (project_root / "encoded").read_text(encoding="utf-8").strip()
+    return verifier.verify(encoded, guess)
 
 
 _RUNTIME_REQUIRED = ("game", "game/incident", "game/people", "hints", "encoded")

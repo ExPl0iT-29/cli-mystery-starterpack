@@ -3,37 +3,20 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from . import templates
+from . import templates, verifier
+from .config import MysteryConfig
 
 
-DEFAULT_CONFIG = {
-    "project_name": "my-cli-mystery",
-    "display_title": "My CLI Mystery",
-    "theme": "original mystery",
-    "player_role": "investigator",
-    "clue_marker": "CLUE",
-    "folders": [
-        "game/interviews",
-        "game/locations",
-        "game/memberships",
-        "game/logs",
-        "game/registry",
-        "hints",
-        "docs",
-        "design",
-        "tools",
-    ],
-}
+# Back-compat: tests and external callers still import DEFAULT_CONFIG as a dict.
+DEFAULT_CONFIG = MysteryConfig().to_dict()
 
 
 def load_config(config_path: Path | None) -> dict:
     if config_path is None:
-        return dict(DEFAULT_CONFIG)
+        return MysteryConfig().to_dict()
     with config_path.open("r", encoding="utf-8") as fh:
         data = json.load(fh)
-    merged = dict(DEFAULT_CONFIG)
-    merged.update(data)
-    return merged
+    return MysteryConfig.from_dict(data).to_dict()
 
 
 def ensure_clean_target(target: Path) -> None:
@@ -65,11 +48,14 @@ def create_project(target: Path, config: dict) -> list[Path]:
     display_title = config["display_title"]
     clue_marker = config["clue_marker"]
 
+    answer_format = config.get("answer_format", verifier.FORMAT_SHA256_SALTED)
+    encoded_value = verifier.hash_answer("John Doe", fmt=answer_format)
+
     files: dict[str, str] = {
         "README.md": templates.root_readme(project_name, display_title),
         "instructions": templates.instructions(display_title),
         "solution": templates.solution(),
-        "encoded": templates.default_answer_hash("John Doe") + "\n",
+        "encoded": encoded_value + "\n",
         "play.py": templates.play_wrapper(),
         "game/incident": templates.incident(clue_marker),
         "game/people": templates.people(),
