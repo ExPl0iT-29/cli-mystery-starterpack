@@ -17,8 +17,8 @@ from typing import Iterable
 
 
 class SessionStore:
-    SCHEMA_VERSION = 2
-    SUPPORTED_VERSIONS = (1, 2)
+    SCHEMA_VERSION = 3
+    SUPPORTED_VERSIONS = (1, 2, 3)
     FILENAME = ".session.json"
 
     @classmethod
@@ -36,6 +36,7 @@ class SessionStore:
             return cls._empty()
         if not isinstance(data, dict) or data.get("version") not in cls.SUPPORTED_VERSIONS:
             return cls._empty()
+        current_scene = data.get("current_scene")
         return {
             "notes": [str(n) for n in data.get("notes", []) if isinstance(n, str)],
             "suspects": [str(s) for s in data.get("suspects", []) if isinstance(s, str)],
@@ -43,6 +44,10 @@ class SessionStore:
             "discovered_clues": [
                 str(c) for c in data.get("discovered_clues", []) if isinstance(c, str)
             ],
+            "topics_asked": [
+                str(t) for t in data.get("topics_asked", []) if isinstance(t, str)
+            ],
+            "current_scene": current_scene if isinstance(current_scene, str) else None,
         }
 
     @classmethod
@@ -54,6 +59,8 @@ class SessionStore:
         suspects: Iterable[str],
         visited: Iterable[str],
         discovered_clues: Iterable[str] = (),
+        topics_asked: Iterable[str] = (),
+        current_scene: str | None = None,
     ) -> None:
         payload = {
             "version": cls.SCHEMA_VERSION,
@@ -61,6 +68,8 @@ class SessionStore:
             "suspects": list(suspects),
             "visited": sorted(set(visited)),
             "discovered_clues": sorted(set(discovered_clues)),
+            "topics_asked": sorted(set(topics_asked)),
+            "current_scene": current_scene,
         }
         path = cls.path_for(project_root)
         tmp = path.parent / (path.name + ".tmp")
@@ -69,4 +78,7 @@ class SessionStore:
 
     @staticmethod
     def _empty() -> dict:
-        return {"notes": [], "suspects": [], "visited": [], "discovered_clues": []}
+        return {
+            "notes": [], "suspects": [], "visited": [],
+            "discovered_clues": [], "topics_asked": [], "current_scene": None,
+        }

@@ -10,6 +10,7 @@ from . import contract, verifier
 from .clues import ClueRegistry, load_clues
 from .dialogue import load_dialogue
 from .events import EventBus
+from .scenes import SceneRouter, load_scenes
 from .session import SessionStore
 from .solutions import load_solutions, parse_accusation
 
@@ -95,18 +96,29 @@ class InvestigationShell(cmd.Cmd):
         self.case_notes: list[str] = list(state["notes"])
         self.suspects: list[str] = list(state["suspects"])
         self.visited: set[str] = set(state["visited"])
+        self.topics_asked: set[str] = set(state.get("topics_asked", []))
         self.events = EventBus()
         clues, _clue_errors = load_clues(self.project_root)
         self.clue_registry = ClueRegistry(clues)
         self.clue_registry.attach(self.events, initial=state.get("discovered_clues", []))
         self.solutions, _solution_errors = load_solutions(self.project_root)
         self.npcs, _dialogue_errors = load_dialogue(self.project_root)
+        scenes, start_scene, _scene_errors = load_scenes(self.project_root)
+        self.scene_router = SceneRouter(scenes, start_scene)
+        scene_initial = {
+            "current_scene": state.get("current_scene") or start_scene,
+            "files_read": list(self.visited),
+            "suspects": list(self.suspects),
+            "topics": list(state.get("topics_asked", [])),
+        }
+        self.scene_router.attach(self.events, initial=scene_initial)
+        self.scene_router.seed_clues(set(self.clue_registry.discovered))
         self._wire_default_subscribers()
         self.prompt = self._prompt()
 
     def _wire_default_subscribers(self) -> None:
         """Subclasses or extensions can override to register more handlers."""
-        return None
+        self.events.subscribe("scene:advanced", self._on_scene_advanced)
 
     def _prompt(self) -> str:
         rel = self.current.relative_to(self.project_root)
@@ -123,6 +135,8 @@ class InvestigationShell(cmd.Cmd):
             suspects=self.suspects,
             visited=self.visited,
             discovered_clues=self.clue_registry.discovered,
+            topics_asked=self.topics_asked,
+            current_scene=self.scene_router.current,
         )
 
     def _read_file(self, path: Path) -> str:
@@ -434,6 +448,7 @@ class InvestigationShell(cmd.Cmd):
             "  notes             list notes\n"
             "  clues             list discovered clues (if the case declares any)\n"
             "  ask <npc> [about <topic>]   probe an NPC (if the case declares any)\n"
+            "  scene             show the current scene/beat (if declared)\n"
             "  journal           recap files read, suspects, and notes\n"
             "  save              persist progress to .session.json\n"
             "  accuse <name>     submit final answer\n"
@@ -450,6 +465,21 @@ class InvestigationShell(cmd.Cmd):
         """save   write your notes, suspects, and visited files to .session.json"""
         self._persist()
         print(f"Session saved to {SessionStore.FILENAME}.")
+
+    def do_scene(self, arg: str) -> None:
+        """scene   show the current scene and its advancement criteria"""
+        if not self.scene_router.has_scenes:
+            print("This case does not declare a scene graph.")
+            return
+        print(self.scene_router.describe_current())
+
+    def _on_scene_advanced(self, payload: dict) -> None:
+        narration = payload.get("narration", "")
+        target = payload.get("to", "?")
+        print(f"\n— scene: {target} —")
+        if narration:
+            print(narration)
+        self._persist()
 
     def do_ask(self, arg: str) -> None:
         """ask <npc>                       list available topics for an NPC
@@ -505,6 +535,7 @@ class InvestigationShell(cmd.Cmd):
             return
 
         print(f"{npc.name}: {topic.response}")
+        self.topics_asked.add(f"{npc.slug}:{topic.id}")
         self.events.emit("dialogue:asked",
                          {"npc": npc.slug, "topic": topic.id})
 

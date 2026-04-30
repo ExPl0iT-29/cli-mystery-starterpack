@@ -102,17 +102,25 @@ class ClueRegistry:
         for clue in clues:
             self._by_path[clue.source_path].append(clue)
         self.discovered: set[str] = set()
+        self._bus: EventBus | None = None
 
     def attach(self, bus: EventBus, *, initial: list[str] | None = None) -> None:
         valid_ids = {c.id for c in self.clues}
         if initial:
             self.discovered = {cid for cid in initial if cid in valid_ids}
+        self._bus = bus
         bus.subscribe("file:read", self._on_file_read)
 
     def _on_file_read(self, payload: dict) -> None:
         path = payload.get("path", "")
         for clue in self._by_path.get(path, ()):
-            self.discovered.add(clue.id)
+            if clue.id not in self.discovered:
+                self.discovered.add(clue.id)
+                if self._bus is not None:
+                    self._bus.emit(
+                        "clue:revealed",
+                        {"id": clue.id, "via": f"file:{path}"},
+                    )
 
     def discovered_clues(self) -> list[Clue]:
         return [c for c in self.clues if c.id in self.discovered]
