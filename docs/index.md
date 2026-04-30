@@ -9,9 +9,10 @@ filesystem-based CLI mystery projects.
 Use this documentation set in the following order:
 
 1. [project-overview.md](./project-overview.md)
-2. [data-model.md](./data-model.md)
-3. [designing-cli-mystery-games.md](./designing-cli-mystery-games.md)
-4. [bmad-checkpoints.md](./bmad-checkpoints.md)
+2. [developer-guide.md](./developer-guide.md) — practical guide for building a new game
+3. [data-model.md](./data-model.md)
+4. [designing-cli-mystery-games.md](./designing-cli-mystery-games.md)
+5. [bmad-checkpoints.md](./bmad-checkpoints.md)
 
 ## Audience
 
