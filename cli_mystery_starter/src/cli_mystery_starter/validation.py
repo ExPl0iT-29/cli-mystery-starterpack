@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from . import verifier
+from .clues import load_clues
 
 
 PLACEHOLDER_ANSWER = "John Doe"
@@ -99,6 +100,10 @@ def validate_project(root: Path) -> list[str]:
     for folder in EXPECTED_FOLDERS:
         if not (root / folder).exists():
             errors.append(f"Missing expected folder: {folder}")
+
+    # Optional clues registry: validate shape if the file exists.
+    _, clue_errors = load_clues(root)
+    errors.extend(clue_errors)
 
     for folder in EVIDENCE_FOLDERS:
         path = root / folder

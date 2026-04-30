@@ -17,7 +17,8 @@ from typing import Iterable
 
 
 class SessionStore:
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
+    SUPPORTED_VERSIONS = (1, 2)
     FILENAME = ".session.json"
 
     @classmethod
@@ -33,12 +34,15 @@ class SessionStore:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return cls._empty()
-        if not isinstance(data, dict) or data.get("version") != cls.SCHEMA_VERSION:
+        if not isinstance(data, dict) or data.get("version") not in cls.SUPPORTED_VERSIONS:
             return cls._empty()
         return {
             "notes": [str(n) for n in data.get("notes", []) if isinstance(n, str)],
             "suspects": [str(s) for s in data.get("suspects", []) if isinstance(s, str)],
             "visited": [str(v) for v in data.get("visited", []) if isinstance(v, str)],
+            "discovered_clues": [
+                str(c) for c in data.get("discovered_clues", []) if isinstance(c, str)
+            ],
         }
 
     @classmethod
@@ -49,12 +53,14 @@ class SessionStore:
         notes: Iterable[str],
         suspects: Iterable[str],
         visited: Iterable[str],
+        discovered_clues: Iterable[str] = (),
     ) -> None:
         payload = {
             "version": cls.SCHEMA_VERSION,
             "notes": list(notes),
             "suspects": list(suspects),
             "visited": sorted(set(visited)),
+            "discovered_clues": sorted(set(discovered_clues)),
         }
         path = cls.path_for(project_root)
         tmp = path.parent / (path.name + ".tmp")
@@ -63,4 +69,4 @@ class SessionStore:
 
     @staticmethod
     def _empty() -> dict:
-        return {"notes": [], "suspects": [], "visited": []}
+        return {"notes": [], "suspects": [], "visited": [], "discovered_clues": []}

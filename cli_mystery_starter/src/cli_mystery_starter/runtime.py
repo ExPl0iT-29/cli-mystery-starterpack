@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 from . import contract, verifier
+from .clues import ClueRegistry, load_clues
 from .events import EventBus
 from .session import SessionStore
 
@@ -93,6 +94,9 @@ class InvestigationShell(cmd.Cmd):
         self.suspects: list[str] = list(state["suspects"])
         self.visited: set[str] = set(state["visited"])
         self.events = EventBus()
+        clues, _clue_errors = load_clues(self.project_root)
+        self.clue_registry = ClueRegistry(clues)
+        self.clue_registry.attach(self.events, initial=state.get("discovered_clues", []))
         self._wire_default_subscribers()
         self.prompt = self._prompt()
 
@@ -114,6 +118,7 @@ class InvestigationShell(cmd.Cmd):
             notes=self.case_notes,
             suspects=self.suspects,
             visited=self.visited,
+            discovered_clues=self.clue_registry.discovered,
         )
 
     def _read_file(self, path: Path) -> str:
@@ -396,6 +401,7 @@ class InvestigationShell(cmd.Cmd):
             "  suspects          list tracked suspects\n"
             "  note <text>       save a note\n"
             "  notes             list notes\n"
+            "  clues             list discovered clues (if the case declares any)\n"
             "  journal           recap files read, suspects, and notes\n"
             "  save              persist progress to .session.json\n"
             "  accuse <name>     submit final answer\n"
@@ -413,6 +419,21 @@ class InvestigationShell(cmd.Cmd):
         self._persist()
         print(f"Session saved to {SessionStore.FILENAME}.")
 
+    def do_clues(self, arg: str) -> None:
+        """clues   list clues you have discovered (requires game/clues.json)"""
+        if not self.clue_registry.clues:
+            print("This case does not declare a clues registry.")
+            return
+        found = self.clue_registry.discovered_clues()
+        if not found:
+            print(f"Discovered 0 / {len(self.clue_registry.clues)} clues. "
+                  "Keep reading evidence files.")
+            return
+        print(f"Discovered {len(found)} / {len(self.clue_registry.clues)} clues:")
+        for clue in found:
+            tags = f"  [{', '.join(clue.tags)}]" if clue.tags else ""
+            print(f"  - {clue.id}: {clue.title}{tags}")
+
     def do_journal(self, arg: str) -> None:
         """journal   recap of files read, suspects marked, and notes recorded"""
         visited = sorted(self.visited)
@@ -427,6 +448,9 @@ class InvestigationShell(cmd.Cmd):
             print(f"\nNotes ({len(self.case_notes)}):")
             for idx, note in enumerate(self.case_notes, start=1):
                 print(f"  {idx}. {note}")
+        if self.clue_registry.clues:
+            found = self.clue_registry.discovered_clues()
+            print(f"\nClues: {len(found)}/{len(self.clue_registry.clues)} discovered")
 
     def do_exit(self, arg: str) -> bool:
         return self.do_quit(arg)
