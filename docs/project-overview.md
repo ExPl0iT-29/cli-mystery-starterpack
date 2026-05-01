@@ -14,12 +14,14 @@ The repository also contains:
 
 ## What The Package Does
 
-The package supports four core workflows:
+The package supports five core workflows:
 
 1. `init`: scaffold a new mystery project from templates
 2. `validate`: run scaffold and content-contract checks against an authored project
 3. `play`: locally run a project in the reusable investigation shell
 4. `check-answer`: verify a suspect name against the encoded solution
+5. `check-solve`: heuristic uniqueness check on the clue graph
+   (UNIQUE / AMBIGUOUS / MISMATCH / INSUFFICIENT)
 
 This makes the repository an authoring and development tool, not a packaged game in
 itself.
@@ -51,14 +53,27 @@ E:\cli mystery starter pack
 
 ## Package Layout
 
-The package implementation is intentionally small:
+The package implementation is small but layered:
 
+Core (always loaded):
 - `cli.py`: argument parsing and command dispatch
-- `runtime.py`: reusable investigation shell for authored projects
-- `answer.py`: answer verification helper
-- `scaffold.py`: config loading and file generation
+- `contract.py`: single source of truth for the project shape
+- `config.py`: typed `MysteryConfig` schema + loader
+- `scaffold.py`: config-validated file generation
 - `templates.py`: text templates for generated files
-- `validation.py`: project-contract checks for scaffolded projects
+- `validation.py`: project-contract checks
+- `verifier.py`: answer-format envelope (sha256_salted, md5_legacy)
+- `answer.py`: answer verification helper
+- `runtime.py`: reusable investigation shell
+- `events.py`: in-process event bus
+- `session.py`: `.session.json` persistence
+
+Optional subsystems (only active when their data file exists):
+- `clues.py`: clue object model + `clues` verb
+- `solutions.py`: multi-field, multi-ending answers
+- `dialogue.py`: NPC dialogue + `ask` verb
+- `scenes.py`: scene/beat engine + `scene` verb
+- `solver.py`: heuristic uniqueness verdict for `check-solve`
 
 ## CLI Surface
 
@@ -100,6 +115,16 @@ Verify a suspect name against a project:
 python dev.py check-answer my-mystery "John Doe"
 ```
 
+### Check Solve Uniqueness
+
+Confirm the clue graph narrows to exactly one suspect:
+
+```bash
+python dev.py check-solve my-mystery
+```
+
+Returns `UNIQUE`, `AMBIGUOUS`, `MISMATCH`, `INSUFFICIENT`, or `ERROR`.
+
 ## Generated Project Shape
 
 The scaffold creates a project with these main areas:
@@ -122,17 +147,35 @@ The starter pack assumes a specific game model:
 - authored content matters more than runtime code
 - code exists mainly to scaffold, validate, and optionally generate content
 
+## Optional Subsystems
+
+Drop a JSON file in to unlock a subsystem; absence falls back to the
+day-1 behavior:
+
+| File | Subsystem |
+|---|---|
+| `game/clues.json`            | Structured clue registry, auto-discovery, `clues` verb |
+| `solutions.json`             | Multi-field accusations, partial endings, alias matching |
+| `game/dialogue/<npc>.json`   | NPC dialogue with clue-gated topics, `ask` verb |
+| `game/scenes.json`           | Scene/beat pacing with predicate gates, `scene` verb |
+
+Every subsystem subscribes to a runtime event bus
+(`file:read`, `clue:revealed`, `suspect:marked`, `dialogue:asked`,
+`scene:advanced`, `accuse:attempt`, …). Author your own custom
+mechanic the same way (worked example in
+[`developer-guide.md`](./developer-guide.md)).
+
 ## Constraints And Non-Goals
 
-This project does not currently provide:
+The starter pack still does not provide:
 
-- persistent runtime state
-- save/load mechanics
-- rich puzzle validation beyond the starter contract
-- content-generation pipelines out of the box
+- advanced puzzle balancing
+- content-generation pipelines for evidence families
+- non-English localization hooks
+- a graphical UI of any kind
 
-Those are deliberate omissions. The starter pack is optimized for simple, portable,
-text-first mystery projects.
+These are deliberate omissions; the pack is optimized for simple,
+portable, text-first mystery projects.
 
 ## Recommended Reading Order For New Maintainers
 

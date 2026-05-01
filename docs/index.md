@@ -34,14 +34,17 @@ These docs are written for:
 - Package name: `cli-mystery-starter`
 - Python requirement: `>=3.10`
 - Runtime model: local CLI only
-- Core commands: `init`, `validate`
+- Core commands: `init`, `validate`, `play`, `check-answer`, `check-solve`
 - Generated project shape: text-first mystery repo with `game/`, `design/`, `docs/`, `hints/`, and `tools/`
 
 ## Key Distinction
 
 The starter pack is not itself the mystery game. It provides:
 
-- a CLI to scaffold a new project
+- a CLI to scaffold, validate, playtest, and uniqueness-check a project
 - starter templates for the game files
-- lightweight validation to catch broken scaffolds
+- a strict validator driven by a single project contract
+- an investigation shell with a documented event bus
+- four data-driven optional subsystems (clues, multi-ending
+  solutions, NPC dialogue, scene/beat engine)
 - a reference authoring shape for filesystem-based mystery design
