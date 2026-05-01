@@ -291,13 +291,193 @@ Then add the corresponding template body in `templates.py` and a row in
 3. Add tests in `tests/test_verifier_and_config.py`.
 4. Bump `config.CONTRACT_VERSION` if this changes the on-disk contract.
 
-### Custom systems (clues, scenes, dialogue)
+### Custom systems via the event bus
 
-These are not yet first-class — they require code edits. The audit in
-`.planning/codebase/CONCERNS.md` and the feature roadmap include
-designs for: scene/beat narrative engine, event/hook bus, clue object
-model, dialogue system, multi-ending solutions, time pressure,
-procedural mystery generation. Pick one and plan a phase.
+The runtime emits a small set of well-known events as the player
+acts:
+
+| Event | Payload | Emitted by |
+|---|---|---|
+| `file:read`       | `{path}`                                   | every `cat` / `head` / `tail` / `open` of a file |
+| `clue:revealed`   | `{id, via}`                                | `ClueRegistry` on first discovery |
+| `suspect:marked`  | `{name}`                                   | `do_mark` |
+| `note:added`      | `{text, index}`                            | `do_note` |
+| `hint:read`       | `{number}`                                 | `do_hint` |
+| `dialogue:asked`  | `{npc, topic}`                             | `do_ask` (a topic with a known response) |
+| `scene:advanced`  | `{from, to, narration}`                    | `SceneRouter` on transition |
+| `accuse:attempt`  | `{guess, correct, fields_correct, ending}` | `do_accuse` |
+
+Every optional subsystem the framework ships (clues, dialogue,
+scenes) is just a subscriber. Author your own:
+
+```python
+class TimePressure:
+    def __init__(self, budget_minutes=120):
+        self.remaining = budget_minutes
+
+    def attach(self, bus):
+        bus.subscribe("file:read",      lambda _: self._spend(5))
+        bus.subscribe("dialogue:asked", lambda _: self._spend(30))
+        bus.subscribe("hint:read",      lambda _: self._spend(15))
+
+    def _spend(self, minutes):
+        self.remaining = max(0, self.remaining - minutes)
+```
+
+Wire it via a custom `InvestigationShell` subclass that overrides
+`_wire_default_subscribers`, or — for distribution — drop a
+discovery loop into the shell `__init__` that imports
+`mystery/plugins/*.py`.
+
+---
+
+## 6.5 Optional Subsystems (data-driven, no code edits)
+
+Each subsystem is **opt-in**: drop the JSON file in, and the
+runtime picks it up. A scaffolded case without any of these files
+behaves exactly as it did on day one.
+
+### 6.5.1 Clue object model — `game/clues.json`
+
+```json
+[
+  {
+    "id": "ledger_44",
+    "title": "Mismatched signature in the East Hall ledger",
+    "source_path": "game/registry/ledger.txt",
+    "tags": ["timeline", "alibi:butler", "points:maria_ortega"]
+  }
+]
+```
+
+When the player `cat`s `source_path`, the clue is auto-marked
+discovered (and emits `clue:revealed`). The `clues` verb shows
+collected clues; the journal recap shows the discovered count.
+Discovered ids persist across sessions in `.session.json`.
+
+Use `points:<slug>` and `exonerates:<slug>` tags to participate in
+the uniqueness solver (§6.5.5).
+
+### 6.5.2 Multi-field, multi-ending — `solutions.json`
+
+```json
+{
+  "answers": {
+    "culprit": {"value": "Maria Ortega", "aliases": ["Ortega"]},
+    "motive":  {"value": "inheritance"},
+    "weapon":  {"value": "chandelier"}
+  },
+  "endings": [
+    {"id": "full_solve",
+     "requires": ["culprit", "motive", "weapon"],
+     "text": "You proved every piece of the case."},
+    {"id": "partial",
+     "requires": ["culprit"],
+     "text": "Right person — wrong story."}
+  ]
+}
+```
+
+Player UX:
+
+```
+accuse Maria Ortega                                # legacy: culprit only
+accuse culprit="Maria Ortega" motive=inheritance   # multi-field
+```
+
+Field matching is case-insensitive and whitespace-collapsing;
+aliases let you accept multiple spellings. Endings fire in declared
+order; the first whose `requires` are all matched wins. When
+`solutions.json` is absent, the runtime falls back to the legacy
+`encoded` flow.
+
+### 6.5.3 NPC dialogue — `game/dialogue/<slug>.json`
+
+```json
+{
+  "name": "The Butler",
+  "greeting": "I served the family for thirty years.",
+  "topics": [
+    {
+      "id": "chandelier",
+      "summary": "the chandelier",
+      "response": "I oiled it last Tuesday.",
+      "reveals_clue": "butler_alibi_break"
+    },
+    {
+      "id": "midnight",
+      "summary": "the midnight gap",
+      "requires_clues": ["butler_alibi_break"],
+      "response": "Fine. I was in the cellar."
+    }
+  ]
+}
+```
+
+Player UX:
+
+```
+ask butler                       # greet + list available topics
+ask butler about chandelier      # response, may reveal a clue
+```
+
+Topics declare `requires_clues`; until those are discovered the NPC
+deflects. `reveals_clue` chains progression: asking unlocks new
+clues that unlock new topics that unlock later scenes.
+
+### 6.5.4 Scene/beat engine — `game/scenes.json`
+
+```json
+{
+  "start": "discover",
+  "scenes": [
+    {"id": "discover",
+     "narration": "The chandelier still swings.",
+     "advances_to": "confront",
+     "advance_when": {"files_read": ["game/incident"]}},
+    {"id": "confront",
+     "narration": "You corner the butler in the East Hall.",
+     "advances_to": "verdict",
+     "advance_when": {"clues": ["butler_alibi_break"]}},
+    {"id": "verdict",
+     "narration": "Time for the accusation.",
+     "advances_to": null}
+  ]
+}
+```
+
+Predicates available in `advance_when`:
+
+- `files_read`      — every path must appear in the player's visited set
+- `clues`           — every clue id must be discovered
+- `suspects_marked` — every name must have been `mark`-ed
+- `topics_asked`    — list of `"<npc>:<topic>"` pairs
+
+The `scene` verb shows the current beat with a met/unmet checklist.
+Scenes with `advances_to: null` are final. Current scene persists
+across runs.
+
+### 6.5.5 Uniqueness solver — `cli-mystery-starter check-solve`
+
+Combines `game/clues.json` + `solutions.json` to verify the case
+narrows to exactly one suspect. Tag clues with `points:<slug>` and
+`exonerates:<slug>` (slug = lowercase, spaces → underscores). Then:
+
+```bash
+cli-mystery-starter check-solve my-case
+```
+
+| Verdict | Meaning | Exit |
+|---|---|---|
+| `UNIQUE`       | One strict top scorer, matches canonical culprit | 0 |
+| `AMBIGUOUS`    | Two or more suspects tie at the top              | 1 |
+| `MISMATCH`     | Top scorer is not the canonical culprit          | 1 |
+| `INSUFFICIENT` | Not enough information to analyze                | 0 |
+| `ERROR`        | Structural problems block analysis               | 1 |
+
+Run it before shipping. Heuristic, not a full constraint solver,
+but it catches the common "my evidence doesn't actually prove the
+case" failure mode.
 
 ---
 
@@ -349,6 +529,7 @@ procedural mystery generation. Pick one and plan a phase.
 | `cli-mystery-starter validate <project>` | check the project against `contract.py` |
 | `cli-mystery-starter play <project>` | open the interactive shell |
 | `cli-mystery-starter check-answer <project> <guess>` | non-interactive answer verify |
+| `cli-mystery-starter check-solve <project>` | heuristic uniqueness verdict on the clue graph |
 
 ### Shell verbs (inside `play`)
 
@@ -367,7 +548,10 @@ procedural mystery generation. Pick one and plan a phase.
 | `note <text>` / `notes` | record / list notes |
 | `mark <name>` / `suspects` | record / list suspects |
 | `hint <1-4>` | read a progressive hint |
-| `accuse <name>` | submit your final answer |
+| `clues` | list discovered clues (when `game/clues.json` exists) |
+| `ask <npc> [about <topic>]` | probe an NPC (when `game/dialogue/` exists) |
+| `scene` | show the current scene + advancement criteria (when `game/scenes.json` exists) |
+| `accuse <name>` / `accuse culprit=… motive=… weapon=…` | submit your final answer |
 | `save` | write progress to `.session.json` |
 | `quit` (or `Ctrl-D`) | save and exit |
 
@@ -386,5 +570,11 @@ procedural mystery generation. Pick one and plan a phase.
 | Answer hash formats | [`verifier.py`](../cli_mystery_starter/src/cli_mystery_starter/verifier.py) |
 | Typed config schema | [`config.py`](../cli_mystery_starter/src/cli_mystery_starter/config.py) |
 | Per-player session state | [`session.py`](../cli_mystery_starter/src/cli_mystery_starter/session.py) |
+| Event bus (subscribe/emit) | [`events.py`](../cli_mystery_starter/src/cli_mystery_starter/events.py) |
+| Clue object model | [`clues.py`](../cli_mystery_starter/src/cli_mystery_starter/clues.py) |
+| Multi-ending solutions | [`solutions.py`](../cli_mystery_starter/src/cli_mystery_starter/solutions.py) |
+| NPC dialogue system | [`dialogue.py`](../cli_mystery_starter/src/cli_mystery_starter/dialogue.py) |
+| Scene/beat engine | [`scenes.py`](../cli_mystery_starter/src/cli_mystery_starter/scenes.py) |
+| Uniqueness solver | [`solver.py`](../cli_mystery_starter/src/cli_mystery_starter/solver.py) |
 
 For broader design context: see [`../design_rules_cli/README.md`](../design_rules_cli/README.md).
