@@ -64,6 +64,16 @@ cli_mystery_starter/
 │     ├─ __main__.py
 │     ├─ answer.py
 │     ├─ cli.py
+│     ├─ contract.py        # single source of truth for project shape
+│     ├─ config.py          # MysteryConfig dataclass + schema
+│     ├─ verifier.py        # answer-format envelope (sha256_salted, md5_legacy)
+│     ├─ events.py          # in-process event bus
+│     ├─ session.py         # .session.json persistence
+│     ├─ clues.py           # optional clue object model
+│     ├─ solutions.py       # optional multi-field, multi-ending answers
+│     ├─ dialogue.py        # optional NPC dialogue system
+│     ├─ scenes.py          # optional scene/beat engine
+│     ├─ solver.py          # heuristic uniqueness check
 │     ├─ runtime.py
 │     ├─ scaffold.py
 │     ├─ validation.py
@@ -79,6 +89,7 @@ cli_mystery_starter/
 - `validate <path>`: run scaffold and content-contract checks against a project
 - `play <path>`: run a project in the reusable investigation shell
 - `check-answer <path> <guess>`: verify a suspect name against a project
+- `check-solve <path>`: heuristic uniqueness check (UNIQUE / AMBIGUOUS / MISMATCH / INSUFFICIENT)
 
 ## Local Development
 
@@ -102,17 +113,38 @@ in editable mode.
 
 ## Validation Contract
 
-Validation now checks:
+Validation checks:
 
-- required scaffold files and folders
+- required scaffold files and folders (driven by `contract.py`)
 - presence of `play.py` and `tools/check_answer.py`
-- valid `mystery_config.json`
+- valid `mystery_config.json` against the typed schema
 - clue marker presence and minimum clue count in `game/incident`
 - basic `game/people` structure
-- `encoded` hash format
+- `encoded` answer-format envelope (sha256_salted or md5_legacy)
+- placeholder-answer detection (warns when default `John Doe` ships
+  unmodified)
 - wrapper integrity for runtime and answer-check helpers
+- structural shape of every optional subsystem when present:
+  `game/clues.json`, `solutions.json`, `game/dialogue/*.json`,
+  `game/scenes.json`
 
-Validation still does not prove puzzle quality or unique solvability.
+For uniqueness ("does my evidence narrow to one suspect?") run
+`cli-mystery-starter check-solve <project>` separately.
+
+## Optional Subsystems
+
+The runtime exposes an event bus (`file:read`, `clue:revealed`,
+`suspect:marked`, `dialogue:asked`, `scene:advanced`,
+`accuse:attempt`, …). Drop a JSON file in to unlock a subsystem:
+
+| File | Subsystem |
+|---|---|
+| `game/clues.json`            | Structured clue registry + `clues` verb |
+| `solutions.json`             | Multi-field accusations + partial endings |
+| `game/dialogue/<npc>.json`   | NPC dialogue with clue-gated topics |
+| `game/scenes.json`           | Scene/beat pacing with predicate gates |
+
+See `../docs/developer-guide.md` for the full subsystem reference.
 
 ## Tests
 

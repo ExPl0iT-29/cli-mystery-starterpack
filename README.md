@@ -38,12 +38,13 @@ E:\cli mystery starter pack
 
 ## The Python Package
 
-The package lives in `cli_mystery_starter/` and exposes four core commands:
+The package lives in `cli_mystery_starter/` and exposes five commands:
 
 - `init <path>`: create a new mystery scaffold
 - `validate <path>`: run scaffold and content-contract checks
 - `play <path>`: run a mystery project in the reusable investigation shell
 - `check-answer <path> <guess>`: verify a suspect name against a project
+- `check-solve <path>`: heuristic uniqueness check on the clue graph (UNIQUE / AMBIGUOUS / MISMATCH)
 
 The generated project shape is centered around:
 
@@ -115,16 +116,37 @@ The starter pack assumes a specific style of game design:
 - code supports authoring, validation, and local playtesting, rather than being the shipped game itself
 - puzzle quality depends on clue design, not on runtime complexity
 
+## Optional Subsystems (data-driven, no code edits)
+
+Drop a JSON file in to unlock a subsystem. A scaffolded case without
+any of these behaves exactly as before:
+
+| File | Unlocks |
+|---|---|
+| `game/clues.json`            | `clues` verb, auto-discovery on `cat`, journal counts |
+| `solutions.json`             | Multi-field `accuse culprit=… motive=… weapon=…`, partial endings |
+| `game/dialogue/<npc>.json`   | `ask <npc> [about <topic>]` verb with clue-gated topics |
+| `game/scenes.json`           | `scene` verb, paced narration, gate-based transitions |
+| (combo of `clues` + `solutions`) | `check-solve` uniqueness verdict |
+
+Every subsystem subscribes to the runtime event bus (`file:read`,
+`clue:revealed`, `suspect:marked`, `dialogue:asked`, `scene:advanced`,
+`accuse:attempt`, …) — author your own custom mechanic the same way.
+
+See [`docs/developer-guide.md`](./docs/developer-guide.md) for the
+full subsystem reference and a worked example.
+
 ## Current Limitations
 
-The package currently gives you a strong starting structure, but it does not yet provide:
+What's still on the author:
 
-- deep schema validation
-- automatic uniqueness checking for the final solution
 - advanced puzzle balancing
-- content generators for every evidence family
-
-Those remain author responsibilities.
+- content generators for every evidence family (logs, registry rows,
+  interviews) — the uniqueness solver tells you *if* your evidence is
+  fair; it does not generate it for you
+- non-English mystery localization
+- time-pressure / inventory mechanics (template plugin shown in the
+  developer guide; not first-class)
 
 ## Bottom Line
 

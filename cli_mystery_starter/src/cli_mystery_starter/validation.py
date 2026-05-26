@@ -1,47 +1,27 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
+from . import verifier
+from .clues import load_clues
+from .dialogue import load_dialogue
+from .scenes import load_scenes
+from .solutions import load_solutions
 
-REQUIRED_PATHS = [
-    "README.md",
-    "instructions",
-    "solution",
-    "encoded",
-    "play.py",
-    "game/incident",
-    "game/people",
-    "hints/hint1",
-    "hints/hint2",
-    "hints/hint3",
-    "hints/hint4",
-    "design/story_bible.md",
-    "design/clue_graph.md",
-    "docs/data_schemas.md",
-    "tools/check_answer.py",
-]
 
-EXPECTED_FOLDERS = [
-    "game/interviews",
-    "game/locations",
-    "game/memberships",
-    "game/logs",
-    "game/registry",
-    "hints",
-    "docs",
-    "design",
-    "tools",
-]
+PLACEHOLDER_ANSWER = "John Doe"
+DEFAULT_PROJECT_NAME = "my-cli-mystery"
 
-EVIDENCE_FOLDERS = [
-    "game/interviews",
-    "game/locations",
-    "game/memberships",
-    "game/logs",
-    "game/registry",
-]
+
+from . import contract
+
+
+# Derived from contract.CONTRACT; kept as module-level lists for back-compat
+# with any external readers that imported these names.
+REQUIRED_PATHS = contract.required_file_paths()
+EXPECTED_FOLDERS = contract.expected_folders()
+EVIDENCE_FOLDERS = contract.evidence_folders()
 
 
 def validate_project(root: Path) -> list[str]:
@@ -92,8 +72,19 @@ def validate_project(root: Path) -> list[str]:
     encoded_path = root / "encoded"
     if encoded_path.exists():
         encoded = encoded_path.read_text(encoding="utf-8").strip()
-        if not re.fullmatch(r"[0-9a-f]{32}", encoded):
-            errors.append("`encoded` must contain a lowercase 32-character MD5 hex digest")
+        fmt = verifier.detect_format(encoded)
+        if fmt is None:
+            errors.append(
+                "`encoded` is not a recognized answer format "
+                "(expected `sha256$<salt>$<digest>` or a 32-char MD5 hex digest)"
+            )
+        elif verifier.verify(encoded, PLACEHOLDER_ANSWER):
+            project_name = (config or {}).get("project_name") if config is not None else None
+            if not project_name or project_name == DEFAULT_PROJECT_NAME:
+                errors.append(
+                    f"`encoded` still resolves to the placeholder `{PLACEHOLDER_ANSWER}` answer; "
+                    "set a real answer before shipping (see `solution` for the one-liner)"
+                )
 
     play_wrapper = root / "play.py"
     if play_wrapper.exists():
@@ -112,6 +103,22 @@ def validate_project(root: Path) -> list[str]:
     for folder in EXPECTED_FOLDERS:
         if not (root / folder).exists():
             errors.append(f"Missing expected folder: {folder}")
+
+    # Optional clues registry: validate shape if the file exists.
+    _, clue_errors = load_clues(root)
+    errors.extend(clue_errors)
+
+    # Optional multi-ending solutions: validate shape if the file exists.
+    _, solution_errors = load_solutions(root)
+    errors.extend(solution_errors)
+
+    # Optional NPC dialogue files: validate shape if any exist.
+    _, dialogue_errors = load_dialogue(root)
+    errors.extend(dialogue_errors)
+
+    # Optional scene graph: validate shape if the file exists.
+    _, _, scene_errors = load_scenes(root)
+    errors.extend(scene_errors)
 
     for folder in EVIDENCE_FOLDERS:
         path = root / folder
