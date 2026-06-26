@@ -12,7 +12,7 @@ from .validation import validate_project
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="cli-mystery-starter",
+        prog="cli-mysterypack",
         description="Scaffold and validate filesystem-based CLI mystery games.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)

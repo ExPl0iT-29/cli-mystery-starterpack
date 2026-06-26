@@ -32,13 +32,13 @@ evidence files using a familiar Unix-flavored shell (`ls`, `cat`,
 ```bash
 git clone <this-repo>
 cd cli_mystery_starter
-pip install -e .            # exposes `cli-mystery-starter` on PATH
+pip install -e .            # exposes `cli-mysterypack` on PATH
 ```
 
 Verify:
 
 ```bash
-cli-mystery-starter --help
+cli-mysterypack --help
 python -m unittest discover -s tests -t .
 ```
 
@@ -120,7 +120,7 @@ Session state currently captures: notes (`note <text>`), suspects
 
 ### 4.4 Validation is your CI
 
-`cli-mystery-starter validate <project>` enforces:
+`cli-mysterypack validate <project>` enforces:
 
 - All required files and directories exist (driven by `CONTRACT`).
 - Every evidence directory contains at least one file.
@@ -161,7 +161,7 @@ python -c "from cli_mystery_starter.verifier import hash_answer; print(hash_answ
 ### Step 1 — Scaffold
 
 ```bash
-cli-mystery-starter init my-case --config my-config.json
+cli-mysterypack init my-case --config my-config.json
 ```
 
 A minimal `my-config.json`:
@@ -234,7 +234,7 @@ Confirm: `python tools/check_answer.py "Maria Ortega"` prints success.
 ### Step 8 — Validate
 
 ```bash
-cli-mystery-starter validate my-case
+cli-mysterypack validate my-case
 ```
 
 Iterate until empty.
@@ -457,14 +457,14 @@ The `scene` verb shows the current beat with a met/unmet checklist.
 Scenes with `advances_to: null` are final. Current scene persists
 across runs.
 
-### 6.5.5 Uniqueness solver — `cli-mystery-starter check-solve`
+### 6.5.5 Uniqueness solver — `cli-mysterypack check-solve`
 
 Combines `game/clues.json` + `solutions.json` to verify the case
 narrows to exactly one suspect. Tag clues with `points:<slug>` and
 `exonerates:<slug>` (slug = lowercase, spaces → underscores). Then:
 
 ```bash
-cli-mystery-starter check-solve my-case
+cli-mysterypack check-solve my-case
 ```
 
 | Verdict | Meaning | Exit |
@@ -525,11 +525,11 @@ case" failure mode.
 
 | Subcommand | Purpose |
 |---|---|
-| `cli-mystery-starter init <target> [--config c.json]` | scaffold a new project |
-| `cli-mystery-starter validate <project>` | check the project against `contract.py` |
-| `cli-mystery-starter play <project>` | open the interactive shell |
-| `cli-mystery-starter check-answer <project> <guess>` | non-interactive answer verify |
-| `cli-mystery-starter check-solve <project>` | heuristic uniqueness verdict on the clue graph |
+| `cli-mysterypack init <target> [--config c.json]` | scaffold a new project |
+| `cli-mysterypack validate <project>` | check the project against `contract.py` |
+| `cli-mysterypack play <project>` | open the interactive shell |
+| `cli-mysterypack check-answer <project> <guess>` | non-interactive answer verify |
+| `cli-mysterypack check-solve <project>` | heuristic uniqueness verdict on the clue graph |
 
 ### Shell verbs (inside `play`)
 

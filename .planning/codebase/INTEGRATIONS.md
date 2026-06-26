@@ -57,7 +57,7 @@ The starter pack is fully offline and self-contained. No HTTP clients, SDKs, or 
 ## CLI / Subprocess Integrations
 
 - No `subprocess`, `os.system`, or external CLI invocations from the package.
-- The starter itself **is** a CLI (`cli-mystery-starter` entry point in `pyproject.toml`) exposing four subcommands defined in `src/cli_mystery_starter/cli.py`:
+- The starter itself **is** a CLI (`cli-mysterypack` entry point in `pyproject.toml`) exposing four subcommands defined in `src/cli_mystery_starter/cli.py`:
   - `init <target> [--config <json>]` — scaffold a project
   - `validate <target>` — structural validation
   - `play <target>` — launch interactive `cmd.Cmd` shell

@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cli-mystery-starter"
+name = "cli-mysterypack"
 version = "0.1.0"
 description = "Reusable Python starter for filesystem-based CLI mystery games."
 readme = "README.md"
@@ -30,7 +30,7 @@ Repository = "https://github.com/ExPl0iT-29/cli-mystery-starterpack"
 Issues = "https://github.com/ExPl0iT-29/cli-mystery-starterpack/issues"
 
 [project.scripts]
-cli-mystery-starter = "cli_mystery_starter.cli:main"
+cli-mysterypack = "cli_mystery_starter.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

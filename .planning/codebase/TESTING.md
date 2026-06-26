@@ -160,7 +160,7 @@ coverage report -m
 
 **Runtime/REPL integration:** `InvestigationShell` driven via `onecmd` to assert side effects (file printing, accusation acceptance).
 
-**E2E:** Not used — there is no subprocess-based test of the installed `cli-mystery-starter` console script.
+**E2E:** Not used — there is no subprocess-based test of the installed `cli-mysterypack` console script.
 
 ## Common Patterns
 

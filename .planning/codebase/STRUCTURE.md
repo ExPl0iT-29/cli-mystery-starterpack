@@ -56,7 +56,7 @@ cli mystery starter pack/
 - Key files: `cli.py`, `runtime.py`, `scaffold.py`, `validation.py`, `templates.py`, `answer.py`.
 
 **`cli_mystery_starter/src/cli_mystery_starter/`** module roles:
-- `cli.py`: argparse parser and `main()` entry point (used by the `cli-mystery-starter` script).
+- `cli.py`: argparse parser and `main()` entry point (used by the `cli-mysterypack` script).
 - `__main__.py`: allows `python -m cli_mystery_starter`.
 - `scaffold.py`: `create_project()`, `load_config()`, `DEFAULT_CONFIG`.
 - `templates.py`: text body generators (no I/O).
@@ -88,7 +88,7 @@ cli mystery starter pack/
 - `cli_mystery_starter/src/cli_mystery_starter/cli.py`: argparse dispatch and `main()`.
 - `cli_mystery_starter/src/cli_mystery_starter/__main__.py`: `python -m` entry.
 - `cli_mystery_starter/dev.py`: dev-mode runner.
-- Console script `cli-mystery-starter` declared in `cli_mystery_starter/pyproject.toml`.
+- Console script `cli-mysterypack` declared in `cli_mystery_starter/pyproject.toml`.
 
 **Configuration:**
 - `cli_mystery_starter/pyproject.toml`: build/packaging config.
@@ -149,7 +149,7 @@ cli mystery starter pack/
 - Detailed study or checklist: `design_rules_cli/` with the next numeric prefix.
 
 **New authored mystery (not a code change):**
-- Run `cli-mystery-starter init <somewhere>` outside this repo; do not commit generated mysteries into the starter pack.
+- Run `cli-mysterypack init <somewhere>` outside this repo; do not commit generated mysteries into the starter pack.
 
 ## Special Directories
 
@@ -169,7 +169,7 @@ cli mystery starter pack/
 - Committed: Yes.
 
 **Author-side `game/`, `hints/`, `design/`, `docs/`, `tools/` (inside a scaffolded project):**
-- Purpose: produced by `cli-mystery-starter init` inside an *author's* project directory, not inside this repo.
+- Purpose: produced by `cli-mysterypack init` inside an *author's* project directory, not inside this repo.
 - Generated: Yes (by `scaffold.create_project`).
 - Committed: In the author's downstream repo, not here.
 

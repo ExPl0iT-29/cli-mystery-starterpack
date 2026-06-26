@@ -187,5 +187,5 @@ portable, text-first mystery projects.
 
 Describe this repository as:
 
-`cli-mystery-starter` is a Python authoring tool that scaffolds, validates, and locally
+`cli-mysterypack` is a Python authoring tool that scaffolds, validates, and locally
 playtests filesystem-based command-line mystery games.

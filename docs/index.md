@@ -31,7 +31,7 @@ These docs are written for:
 
 ## Quick Facts
 
-- Package name: `cli-mystery-starter`
+- Package name: `cli-mysterypack`
 - Python requirement: `>=3.10`
 - Runtime model: local CLI only
 - Core commands: `init`, `validate`, `play`, `check-answer`, `check-solve`

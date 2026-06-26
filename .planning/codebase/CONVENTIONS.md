@@ -114,7 +114,7 @@
 **Exports:**
 - Package `__init__.py` declares only `__all__ = ["__version__"]` and `__version__ = "0.1.0"`
 - Submodules are imported directly (`from cli_mystery_starter.cli import main`); no re-exports at the package root
-- Console script entry point: `cli-mystery-starter = "cli_mystery_starter.cli:main"` (in `pyproject.toml`)
+- Console script entry point: `cli-mysterypack = "cli_mystery_starter.cli:main"` (in `pyproject.toml`)
 - Module execution supported via `python -m cli_mystery_starter` (`__main__.py` present)
 
 **Barrel Files:**

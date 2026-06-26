@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document explains the project shape that `cli-mystery-starter` generates and the
+This document explains the project shape that `cli-mysterypack` generates and the
 minimum contract enforced by `validate`.
 
 ## Package-Level Data Flow
@@ -182,7 +182,7 @@ Validation also checks:
 
 This is a sanity gate, not a uniqueness/fairness proof. For
 "does the evidence narrow to one suspect?" run
-`cli-mystery-starter check-solve <project>` separately (see §below).
+`cli-mysterypack check-solve <project>` separately (see §below).
 
 ## Template Assumptions
 

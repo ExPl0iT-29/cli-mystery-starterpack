@@ -61,8 +61,8 @@ Pick whichever fits how you want to work. All three end at the same `init` comma
 ### 1. Install from PyPI
 
 ```bash
-pip install cli-mystery-starter
-cli-mystery-starter init my-mystery
+pip install cli-mysterypack
+cli-mysterypack init my-mystery
 ```
 
 ### 2. Use as a GitHub template
@@ -84,13 +84,13 @@ python dev.py init my-mystery
 
 ## Common Commands
 
-Whether you installed the package (`cli-mystery-starter`) or run from source (`python dev.py`),
+Whether you installed the package (`cli-mysterypack`) or run from source (`python dev.py`),
 the subcommands are the same:
 
 ```bash
-cli-mystery-starter validate my-mystery                 # check the project contract
-cli-mystery-starter play my-mystery                     # playtest in the investigation shell
-cli-mystery-starter init my-mystery --config examples/mystery_config.json   # custom metadata
+cli-mysterypack validate my-mystery                 # check the project contract
+cli-mysterypack play my-mystery                     # playtest in the investigation shell
+cli-mysterypack init my-mystery --config examples/mystery_config.json   # custom metadata
 ```
 
 ## Recommended Authoring Flow

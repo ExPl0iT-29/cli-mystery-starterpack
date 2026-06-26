@@ -20,7 +20,7 @@
 - Location: `cli_mystery_starter/src/cli_mystery_starter/cli.py`, `cli_mystery_starter/src/cli_mystery_starter/__main__.py`
 - Contains: `build_parser()`, `main()`.
 - Depends on: `scaffold`, `validation`, `runtime`, `answer`.
-- Used by: console script `cli-mystery-starter` (declared in `pyproject.toml`) and `python -m cli_mystery_starter`.
+- Used by: console script `cli-mysterypack` (declared in `pyproject.toml`) and `python -m cli_mystery_starter`.
 
 **Scaffold layer:**
 - Purpose: create a new mystery project on disk from a config dict.
@@ -113,7 +113,7 @@
 
 ## Entry Points
 
-**`cli-mystery-starter` console script:**
+**`cli-mysterypack` console script:**
 - Location: declared in `cli_mystery_starter/pyproject.toml` line 17, target `cli_mystery_starter.cli:main`.
 - Triggers: user shell, or `python -m cli_mystery_starter` via `__main__.py`.
 - Responsibilities: dispatch `init` / `validate` / `play` / `check-answer`.
@@ -156,15 +156,15 @@
 
 Authors do not edit the `cli_mystery_starter` package. They produce a project and edit content files:
 
-1. **Generate the scaffold:** `cli-mystery-starter init <target> [--config config.json]`. Optional config keys override `scaffold.DEFAULT_CONFIG` (project_name, display_title, theme, player_role, answer_type, clue_marker, folders).
+1. **Generate the scaffold:** `cli-mysterypack init <target> [--config config.json]`. Optional config keys override `scaffold.DEFAULT_CONFIG` (project_name, display_title, theme, player_role, answer_type, clue_marker, folders).
 2. **Edit story design first:** `design/story_bible.md` and `design/clue_graph.md` (templates from `templates.story_bible` / `templates.clue_graph`).
 3. **Author the incident:** `game/incident` — must contain at least 3 occurrences of the configured `clue_marker` (default `CLUE`).
 4. **Populate `game/people`:** tab- or pipe-delimited records with header.
 5. **Author evidence families:** add real files under `game/interviews/`, `game/locations/`, `game/logs/`, `game/memberships/`, `game/registry/` (each must contain at least one file).
 6. **Write hints:** `hints/hint1` … `hints/hint4` (the `do_hint` runtime command only accepts 1–4).
 7. **Set the answer:** overwrite `encoded` with `md5(answer).hexdigest()` (one-liner shown in `solution`).
-8. **Validate:** `cli-mystery-starter validate <project>` until errors are empty.
-9. **Playtest:** `python play.py` or `cli-mystery-starter play <project>`.
+8. **Validate:** `cli-mysterypack validate <project>` until errors are empty.
+9. **Playtest:** `python play.py` or `cli-mysterypack play <project>`.
 
 **Extending the runtime itself:**
 - Add a new surface jump: append to `SURFACES` in `runtime.py` line 10.

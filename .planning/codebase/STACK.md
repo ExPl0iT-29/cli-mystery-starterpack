@@ -53,11 +53,11 @@
 
 **Environment:**
 - No environment variables consumed
-- Optional JSON config file passed via `cli-mystery-starter init --config <path>` and parsed by `scaffold.load_config` (`src/cli_mystery_starter/scaffold.py`)
+- Optional JSON config file passed via `cli-mysterypack init --config <path>` and parsed by `scaffold.load_config` (`src/cli_mystery_starter/scaffold.py`)
 - `DEFAULT_CONFIG` constant in `scaffold.py` provides fallback metadata
 
 **Build:**
-- `cli_mystery_starter/pyproject.toml` — declares package, entry point `cli-mystery-starter = "cli_mystery_starter.cli:main"`, src layout (`package-dir = {"" = "src"}`)
+- `cli_mystery_starter/pyproject.toml` — declares package, entry point `cli-mysterypack = "cli_mystery_starter.cli:main"`, src layout (`package-dir = {"" = "src"}`)
 
 ## Platform Requirements
 

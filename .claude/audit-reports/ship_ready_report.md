@@ -1,7 +1,7 @@
 # Ship-Ready Code Audit & Founder Review
 
 ## Executive Summary
-`cli-mystery-starter` is a small, dependency-free Python package that scaffolds, validates, playtests, and answer-checks filesystem-based CLI mystery games. It is an authoring toolchain, not a deployed web/mobile app — so most of the security and UX rubric (auth, CORS, XSS, retention loops, onboarding screens) is N/A. Since the previous audit the project gained real packaging: an MIT `LICENSE`, complete `pyproject.toml` metadata, three documented install paths (PyPI / GitHub template / clone), and a verified wheel+sdist build. 7/7 tests pass, the installed console command scaffolds a valid 25-file project, zero dependencies, no hardcoded secrets, no comment spam. It is ready to publish.
+`cli-mysterypack` is a small, dependency-free Python package that scaffolds, validates, playtests, and answer-checks filesystem-based CLI mystery games. It is an authoring toolchain, not a deployed web/mobile app — so most of the security and UX rubric (auth, CORS, XSS, retention loops, onboarding screens) is N/A. Since the previous audit the project gained real packaging: an MIT `LICENSE`, complete `pyproject.toml` metadata, three documented install paths (PyPI / GitHub template / clone), and a verified wheel+sdist build. 7/7 tests pass, the installed console command scaffolds a valid 25-file project, zero dependencies, no hardcoded secrets, no comment spam. It is ready to publish.
 
 ## Ship-Ready Score: **93 / 100**
 - **Founder UX & Features:** 22 / 25
@@ -64,7 +64,7 @@ No critical, high, or medium findings. Offline CLI: no network, database, server
 ---
 
 ## 5. Next Steps for Launch
-- **Confirm the PyPI name** `cli-mystery-starter` is unowned on pypi.org; rename in `pyproject.toml` if taken.
+- **Confirm the PyPI name** `cli-mysterypack` is unowned on pypi.org; rename in `pyproject.toml` if taken.
 - **Flip the GitHub template toggle** (repo Settings → "Template repository") so "Use this template" appears.
 - **Optional:** add the GitHub Actions test/publish workflow (suggestion #1) for a tag-driven release.
 - **Optional:** delete the stale `.claude/worktrees/` copy.

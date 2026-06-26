@@ -92,7 +92,7 @@
 - Workflow: `docs normalization / repo alignment`
 - Artifact created or updated: documentation gap analysis for `docs/`
 - Blockers: none
-- Decisions: treat current docs as misaligned because they describe the original `clmystery` pattern instead of the `cli-mystery-starter` package in this workspace
+- Decisions: treat current docs as misaligned because they describe the original `clmystery` pattern instead of the `cli-mysterypack` package in this workspace
 - Handoff target: `tech-writer`
 - Completion state: complete
 

@@ -129,7 +129,7 @@ Validation checks:
   `game/scenes.json`
 
 For uniqueness ("does my evidence narrow to one suspect?") run
-`cli-mystery-starter check-solve <project>` separately.
+`cli-mysterypack check-solve <project>` separately.
 
 ## Optional Subsystems
 
@@ -165,7 +165,7 @@ python -m twine upload dist/*          # needs a PyPI token in ~/.pypirc or TWIN
 ```
 
 Bump `version` in `pyproject.toml` before each release. Test the wheel locally first with
-`pip install dist/cli_mystery_starter-<version>-py3-none-any.whl`.
+`pip install dist/cli_mysterypack-<version>-py3-none-any.whl`.
 
 ## Why Python
 
