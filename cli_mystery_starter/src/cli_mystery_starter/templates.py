@@ -8,7 +8,7 @@ def slugify(value: str) -> str:
 
 
 def default_answer_hash(answer: str) -> str:
-    return md5(answer.encode("utf-8")).hexdigest()
+    return md5(answer.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 def root_readme(project_name: str, display_title: str) -> str:
@@ -49,13 +49,7 @@ python -m cli_mystery_starter validate .
 Answer verification:
 
 ```bash
-python tools/check_answer.py "John Doe"
-```
-
-Run validation with:
-
-```bash
-python -m cli_mystery_starter validate .
+python tools/check_answer.py "<your suspect>"
 ```
 """
 
@@ -78,23 +72,30 @@ def solution() -> str:
     return """Checking Your Answer
 ====================
 
+NOTE TO AUTHORS:
+- This file is for *you*, not the player. Add it to .gitignore or delete it
+  before shipping. Anyone who reads it learns the canonical answer.
+
 In the interactive runtime:
 
-    accuse "John Doe"
+    accuse "<your suspect>"
 
 Through the helper script:
 
-    python tools/check_answer.py "John Doe"
+    python tools/check_answer.py "<your suspect>"
 
-Replace `John Doe` with your suspected answer:
+Regenerate the encoded hash whenever you change the canonical answer:
 
-    echo "John Doe" | python -c "import sys,hashlib; print(hashlib.md5(sys.stdin.read().strip().encode()).hexdigest())"
+    python -c "import hashlib; print(hashlib.md5(b'YOUR ANSWER', usedforsecurity=False).hexdigest())" > encoded
 
-Compare the output against the contents of `encoded`.
+Comparison rules:
+- the player's guess is `.strip()`-ed before hashing
+- comparison is exact (case- and punctuation-sensitive); pick a canonical
+  spelling and document it for the player
 
-Author note:
-- replace the placeholder encoded hash before shipping
-- optionally add a platform-specific helper script later
+Author checklist:
+- replace the placeholder `John Doe` hash with your real answer's hash
+- delete or .gitignore this `solution` file before sharing the case
 """
 
 
@@ -199,6 +200,16 @@ def data_schemas() -> str:
 ## interviews / logs / memberships / registry
 
 - keep each family internally consistent
+"""
+
+
+def gitignore() -> str:
+    return """# Per-player session state (notes, suspects, files read)
+.session.json
+.session.json.tmp
+
+# Author-only file revealing the canonical answer
+solution
 """
 
 
