@@ -20,7 +20,7 @@ python -m unittest discover -s cli_mystery_starter/tests -t cli_mystery_starter
 
 # Or from the cli_mystery_starter/ subdirectory
 cd cli_mystery_starter
-python -m unittest discover -s tests
+python -m unittest discover
 
 # Run the single test module directly
 python cli_mystery_starter/tests/test_cli_mystery_starter.py

@@ -151,7 +151,7 @@ See `../docs/developer-guide.md` for the full subsystem reference.
 Run the automated test suite from this directory:
 
 ```bash
-python -m unittest discover -s tests
+python -m unittest discover
 ```
 
 ## Publishing to PyPI
