@@ -129,7 +129,7 @@ This project does not currently provide:
 - persistent runtime state
 - save/load mechanics
 - rich puzzle validation beyond the starter contract
-- content-generation pipelines out of the box
+- built-in content-generation pipelines
 
 Those are deliberate omissions. The starter pack is optimized for simple, portable,
 text-first mystery projects.

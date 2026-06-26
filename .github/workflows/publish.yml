@@ -1,0 +1,29 @@
+name: Publish
+
+# Tag a release to publish, e.g. `git tag v0.1.0 && git push --tags`.
+# Uses PyPI Trusted Publishing (OIDC) — no API token needed.
+# One-time setup: add this repo as a trusted publisher at
+# https://pypi.org/manage/account/publishing/ (workflow: publish.yml).
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    defaults:
+      run:
+        working-directory: cli_mystery_starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s tests
+      - run: pip install build && python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: cli_mystery_starter/dist

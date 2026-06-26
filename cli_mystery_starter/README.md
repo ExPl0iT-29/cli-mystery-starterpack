@@ -122,6 +122,19 @@ Run the automated test suite from this directory:
 python -m unittest discover -s tests
 ```
 
+## Publishing to PyPI
+
+From this directory:
+
+```bash
+python -m pip install build twine
+python -m build                       # writes dist/*.whl and dist/*.tar.gz
+python -m twine upload dist/*          # needs a PyPI token in ~/.pypirc or TWINE_PASSWORD
+```
+
+Bump `version` in `pyproject.toml` before each release. Test the wheel locally first with
+`pip install dist/cli_mystery_starter-<version>-py3-none-any.whl`.
+
 ## Why Python
 
 Python is a good fit for this style of project because it is strong at:

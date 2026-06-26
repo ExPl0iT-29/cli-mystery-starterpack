@@ -2,3 +2,8 @@
 .omx/
 __pycache__/
 *.pyc
+
+# build artifacts
+build/
+dist/
+*.egg-info/

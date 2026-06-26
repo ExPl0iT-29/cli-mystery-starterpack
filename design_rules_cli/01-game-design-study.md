@@ -79,9 +79,9 @@ They are an example of puzzle friction that feels fair.
 
 The membership files create set intersection gameplay.
 
-This is elegant because:
+This works because:
 
-- the rule is intuitive
+- the rule is easy to grasp
 - the files are large enough to matter
 - the player can solve it with simple shell operations
 - the evidence feels diegetic

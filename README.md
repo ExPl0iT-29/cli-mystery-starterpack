@@ -53,31 +53,43 @@ The generated project shape is centered around:
 - `hints/`: progressive player hints
 - `tools/`: optional generators and validators
 
-## Quick Start
+## Getting Started
 
-From the package directory:
+Pick whichever fits how you want to work. All three end at the same `init` command.
+
+### 1. Install from PyPI
 
 ```bash
-cd cli_mystery_starter
+pip install cli-mystery-starter
+cli-mystery-starter init my-mystery
+```
+
+### 2. Use as a GitHub template
+
+Click **Use this template** on the [repo](https://github.com/ExPl0iT-29/cli-mystery-starterpack),
+create your own copy, then from `cli_mystery_starter/`:
+
+```bash
+python dev.py init ../my-mystery
+```
+
+### 3. Clone and run (no install)
+
+```bash
+git clone https://github.com/ExPl0iT-29/cli-mystery-starterpack
+cd cli-mystery-starterpack/cli_mystery_starter
 python dev.py init my-mystery
 ```
 
-To validate an authored project:
+## Common Commands
+
+Whether you installed the package (`cli-mystery-starter`) or run from source (`python dev.py`),
+the subcommands are the same:
 
 ```bash
-python dev.py validate my-mystery
-```
-
-To locally playtest an authored project:
-
-```bash
-python dev.py play my-mystery
-```
-
-If you want to customize the scaffold metadata, pass a JSON config:
-
-```bash
-python dev.py init my-mystery --config examples/mystery_config.json
+cli-mystery-starter validate my-mystery                 # check the project contract
+cli-mystery-starter play my-mystery                     # playtest in the investigation shell
+cli-mystery-starter init my-mystery --config examples/mystery_config.json   # custom metadata
 ```
 
 ## Recommended Authoring Flow

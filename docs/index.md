@@ -23,7 +23,7 @@ These docs are written for:
 
 ## Documentation Map
 
-- [project-overview.md](./project-overview.md): product scope, repository layout, CLI commands, and user journeys
+- [project-overview.md](./project-overview.md): product scope, repository layout, CLI commands, and usage flows
 - [data-model.md](./data-model.md): scaffold structure, generated artifacts, configuration fields, and validation rules
 - [designing-cli-mystery-games.md](./designing-cli-mystery-games.md): authoring guidance for turning the scaffold into a playable CLI mystery
 - [bmad-checkpoints.md](./bmad-checkpoints.md): BMAD checkpoint ledger for the documentation work

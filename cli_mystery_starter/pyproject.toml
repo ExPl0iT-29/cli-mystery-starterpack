@@ -8,10 +8,26 @@ version = "0.1.0"
 description = "Reusable Python starter for filesystem-based CLI mystery games."
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-  { name = "OpenAI Codex" }
+  { name = "Tushar Satpute", email = "tusharsatpute68@gmail.com" }
+]
+keywords = ["cli", "game", "mystery", "scaffold", "puzzle", "interactive-fiction"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Topic :: Games/Entertainment :: Puzzle Games",
 ]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/ExPl0iT-29/cli-mystery-starterpack"
+Repository = "https://github.com/ExPl0iT-29/cli-mystery-starterpack"
+Issues = "https://github.com/ExPl0iT-29/cli-mystery-starterpack/issues"
 
 [project.scripts]
 cli-mystery-starter = "cli_mystery_starter.cli:main"

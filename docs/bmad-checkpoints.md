@@ -141,3 +141,38 @@
 - Decisions: pin Ruflo MCP server registration to `ruflo@3.5.51` as the last locally verified working version instead of broken `latest`
 - Handoff target: `complete`
 - Completion state: complete
+
+## 2026-04-28 - Last Train To Bhopal Design Pack
+
+### Checkpoint 13
+
+- Role: `analyst`
+- Phase: `analysis`
+- Workflow: `gds-brainstorm-game / concept selection fallback`
+- Artifact created or updated: concept framing for a starter-pack-compatible mystery game
+- Blockers: exact BMAD game-design workflow could not run because the repo does not contain the required `_bmad` workflow resolver and config files
+- Decisions: proceed with a direct design-doc pack centered on a railway murder mystery optimized for filesystem-based investigation
+- Handoff target: `pm`
+- Completion state: complete
+
+### Checkpoint 14
+
+- Role: `pm`
+- Phase: `planning`
+- Workflow: `gds-create-gdd / direct artifact authoring fallback`
+- Artifact created or updated: required design document set definition
+- Blockers: none
+- Decisions: create a compact implementation-ready pack consisting of brief, GDD, story bible, clue graph, and production plan under `docs/last-train-to-bhopal/`
+- Handoff target: `architect`
+- Completion state: complete
+
+### Checkpoint 15
+
+- Role: `architect`
+- Phase: `solutioning`
+- Workflow: `gds-create-gdd / direct artifact authoring fallback`
+- Artifact created or updated: full design pack for `The Last Train to Bhopal`
+- Blockers: none
+- Decisions: keep scope intentionally small for first playable version and align evidence families with the starter pack scaffold
+- Handoff target: `complete`
+- Completion state: complete
